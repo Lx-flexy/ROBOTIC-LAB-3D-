@@ -1463,6 +1463,52 @@ function createDesigningZoneRack(parent, x, z) {
   // 6. Shelf 3 (y = 2.15): Quadcopter Drone sitting safely ON top wooden shelf
   createDrone(g, 0, 2.165, 0);
 
+  // 7. Orange faceted ceramic vase on top of rack
+  const vaseGroup = new THREE.Group();
+  vaseGroup.position.set(0, 2.38, 0);
+  const orangeVaseMat = M(0xff7a00, { roughness: 0.35 });
+  cyl(vaseGroup, 0.06, 0.10, 0.18, orangeVaseMat, 0, 0.09, 0, 8);
+  cyl(vaseGroup, 0.09, 0.05, 0.14, orangeVaseMat, 0, 0.23, 0, 8);
+  cyl(vaseGroup, 0.045, 0.055, 0.08, orangeVaseMat, 0, 0.32, 0, 8);
+  g.add(vaseGroup);
+
+  parent.add(g);
+  return g;
+}
+
+/** White Miniature Astronaut Figurine for Tabletop */
+function createAstronautFigurine(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const whiteMat = M(0xf0f0f3, { roughness: 0.35, metalness: 0.1 });
+  const goldVisorMat = M(0xffb300, { roughness: 0.15, metalness: 0.9 });
+  const darkMat = M(0x222228, { roughness: 0.5 });
+
+  // Legs & boots
+  box(g, 0.045, 0.09, 0.05, whiteMat, -0.035, 0.045, 0);
+  box(g, 0.045, 0.09, 0.05, whiteMat, 0.035, 0.045, 0);
+  box(g, 0.05, 0.02, 0.065, darkMat, -0.035, 0.01, 0.008);
+  box(g, 0.05, 0.02, 0.065, darkMat, 0.035, 0.01, 0.008);
+
+  // Torso & backpack
+  box(g, 0.10, 0.11, 0.075, whiteMat, 0, 0.14, 0);
+  box(g, 0.075, 0.09, 0.04, whiteMat, 0, 0.14, -0.05);
+
+  // Arms
+  box(g, 0.038, 0.09, 0.038, whiteMat, -0.065, 0.13, 0);
+  box(g, 0.038, 0.09, 0.038, whiteMat, 0.065, 0.13, 0);
+
+  // Helmet & gold visor
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 10), whiteMat);
+  helmet.position.set(0, 0.23, 0);
+  g.add(helmet);
+
+  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.042, 10, 8), goldVisorMat);
+  visor.position.set(0, 0.23, 0.035);
+  visor.scale.set(1.1, 0.85, 0.65);
+  g.add(visor);
+
   parent.add(g);
   return g;
 }
@@ -1864,6 +1910,17 @@ export function buildBackWall(scene) {
   createWorkstationWithScreen(scene, -1.2, -14.15, create3DModelingScreenTexture());
   // Right: Graphic Design App (SRI drone poster with color/layer tools)
   createWorkstationWithScreen(scene, 1.2, -14.15, createGraphicDesignScreenTexture());
+
+  // Miniature white astronaut figurine standing on the left side of the table
+  createAstronautFigurine(scene, -2.15, 0.82, -14.05);
+
+  // Modern sleek black linear LED pendant fixture suspended from ceiling above workstation
+  const pendantY = 4.8;
+  const pendantZ = -13.85;
+  box(scene, 4.2, 0.07, 0.07, M(0x1a1a1e, { roughness: 0.4 }), 0.0, pendantY, pendantZ);
+  box(scene, 4.15, 0.012, 0.05, M(0xffffff, { emissive: 0xffffff, emissiveIntensity: 1.6 }), 0.0, pendantY - 0.038, pendantZ);
+  cyl(scene, 0.003, 0.003, 1.0, M(0x888888, { metalness: 0.8 }), -1.6, pendantY + 0.5, pendantZ, 6);
+  cyl(scene, 0.003, 0.003, 1.0, M(0x888888, { metalness: 0.8 }), 1.6, pendantY + 0.5, pendantZ, 6);
 
   // Two ergonomic chairs with black mesh backs and vibrant orange seat cushions, tucked under desk
   createChair(scene, -1.2, -13.35, 0, { orangeSeat: true });
