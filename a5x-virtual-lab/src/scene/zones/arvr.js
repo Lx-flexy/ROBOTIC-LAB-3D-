@@ -18,6 +18,7 @@
 import * as THREE from 'three';
 import { box, cyl } from '../../utils/geometry.js';
 import { M, Bm, C, canvasTex } from '../../utils/materials.js';
+import { getBakedFloorTexture } from '../props/floor.js';
 
 export const ARVR_CONFIG = {
   id: 'arvr',
@@ -52,10 +53,10 @@ export function buildArVrLab(scene) {
   const ledWarmMat = Bm(0xfff6e5);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 1. MARBLE FLOOR SLAB (Pristine gray marble, 1.2m tiles, zero stray lines)
+  // 1. MARBLE FLOOR SLAB (Matching main lab photo-accurate gray marble)
   // ═══════════════════════════════════════════════════════════════════════════
   try {
-    const floorTex = getArVrFloorTexture();
+    const floorTex = getBakedFloorTexture();
     const floorMat = new THREE.MeshStandardMaterial({
       map: floorTex,
       color: 0xffffff,
@@ -166,11 +167,15 @@ export function buildArVrLab(scene) {
     // East skirting
     box(g, 0.03, skH, roomL, navyMat, xMax - 0.015, floorY + skH / 2, centerZ);
     box(g, 0.032, 0.015, roomL, orangeMat, xMax - 0.015, floorY + skH, centerZ);
-    // West skirting (split around door)
-    box(g, 0.03, skH, wNorthL, navyMat, xMin + 0.015, floorY + skH / 2, zMin + wNorthL / 2);
-    box(g, 0.032, 0.015, wNorthL, orangeMat, xMin + 0.015, floorY + skH, zMin + wNorthL / 2);
-    box(g, 0.03, skH, wSouthL, navyMat, xMin + 0.015, floorY + skH / 2, doorZMax + wSouthL / 2);
-    box(g, 0.032, 0.015, wSouthL, orangeMat, xMin + 0.015, floorY + skH, doorZMax + wSouthL / 2);
+    // West skirting (split cleanly around door frame to prevent co-planar overlap)
+    const wNorthSkLen = Math.max(0.1, 4.08 - zMin);
+    box(g, 0.03, skH, wNorthSkLen, navyMat, xMin + 0.015, floorY + skH / 2, zMin + wNorthSkLen / 2);
+    box(g, 0.032, 0.015, wNorthSkLen, orangeMat, xMin + 0.015, floorY + skH, zMin + wNorthSkLen / 2);
+
+    const wSouthSkStart = 5.52;
+    const wSouthSkLen = Math.max(0.1, zMax - wSouthSkStart);
+    box(g, 0.03, skH, wSouthSkLen, navyMat, xMin + 0.015, floorY + skH / 2, wSouthSkStart + wSouthSkLen / 2);
+    box(g, 0.032, 0.015, wSouthSkLen, orangeMat, xMin + 0.015, floorY + skH, wSouthSkStart + wSouthSkLen / 2);
   } catch (err) {
     console.error('[AR/VR Lab] Architectural walls build failed:', err);
   }
@@ -868,134 +873,323 @@ function buildEastWindowWall(parent, xMax, cz, floorY, roomL, roomH) {
 // ─────────────────────────────────────────────────────────────────────────────
 function buildVrEquipmentZone(parent, xMin, floorY, zMin, zMax) {
   const g = new THREE.Group();
-  g.position.set(xMin, floorY, 0);
+  // Centered at Z = 9.60m, rotated so local -X is Left (South/Lounge) and +X is Right (North/Door)
+  g.position.set(xMin, floorY, 9.60);
   g.rotation.y = Math.PI / 2;
 
-  // The VR Equipment wall sits along z = 6.20 to 13.60m (comfortably past the door)
-  const zoneZ = 9.80;
-  const zoneL = 7.00;
+  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const W = isMobile ? 2048 : 4096;
+  const H = isMobile ? 1024 : 2048;
+  const scale = W / 4096;
 
-  // 1. Navy Painted Wall Accent Panel Behind Pegboard
-  const navyPanelTex = canvasTex(1024, 512, (ctx) => {
+  const wallL = 7.80; // 7.8m span along wall
+  const wallH = 3.60;
+
+  const vrWallBlocks = [];
+
+  // 1. High-Resolution Painted Wall Graphic Mural Texture (4096x2048, 2048x1024 on mobile)
+  const muralTex = canvasTex(W, H, (ctx) => {
+    // Warm peach/cream base wall paint
+    ctx.fillStyle = '#fff1e3';
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle realistic paint grain
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.015)';
+    for (let i = 0; i < 25000; i++) {
+      ctx.fillRect(Math.random() * W, Math.random() * H, 2, 2);
+    }
+
+    // ── LEFT CREAM COLUMN (X = 0 to 800) with 4 STACKED ITEMS ──
+    const colW = Math.round(800 * scale);
+    const iconX = Math.round(colW * 0.50);
+    const itemFontSize = Math.round(34 * scale);
+
+    const columnItems = [
+      { id: 'Left-VR', icon: 'headset', label: ['Virtual', 'Reality'], y: 240 },
+      { id: 'Left-AR', icon: 'ar', label: ['Augmented', 'Reality'], y: 680 },
+      { id: 'Left-360', icon: 'circle360', label: ['360° Immersive', 'Learning'], y: 1120 },
+      { id: 'Left-3D', icon: 'cube3d', label: ['3D', 'Visualization'], y: 1560 },
+    ];
+
+    columnItems.forEach((item, idx) => {
+      const iy = Math.round(item.y * scale);
+      const iconH = Math.round(60 * scale);
+      drawPanelVectorIcon(ctx, iconX, iy + iconH / 2, item.icon, scale, '#14284b');
+
+      const labelTop = iy + iconH + Math.round(16 * scale);
+      ctx.fillStyle = '#14284b';
+      ctx.font = `bold ${itemFontSize}px 'Segoe UI', system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+
+      let maxTextW = 0;
+      item.label.forEach((line, li) => {
+        const lineY = labelTop + li * Math.round(42 * scale);
+        ctx.fillText(line, iconX, lineY);
+        const tw = ctx.measureText(line).width;
+        if (tw > maxTextW) maxTextW = tw;
+      });
+
+      const blockW = Math.max(iconH, maxTextW);
+      const blockH = iconH + Math.round(16 * scale) + item.label.length * Math.round(42 * scale);
+      vrWallBlocks.push({
+        id: item.id,
+        x1: iconX - blockW / 2,
+        y1: iy,
+        x2: iconX + blockW / 2,
+        y2: iy + blockH,
+      });
+
+      // Thin horizontal orange divider line below item (except last)
+      if (idx < 3) {
+        const divY = iy + blockH + Math.round(60 * scale);
+        const divLen = Math.round(240 * scale);
+        ctx.strokeStyle = '#ff7a00';
+        ctx.lineWidth = Math.max(2, Math.round(3.5 * scale));
+        ctx.beginPath();
+        ctx.moveTo(iconX - divLen / 2, divY);
+        ctx.lineTo(iconX + divLen / 2, divY);
+        ctx.stroke();
+
+        vrWallBlocks.push({
+          id: `Left-Div-${idx}`,
+          x1: iconX - divLen / 2,
+          y1: divY - 4 * scale,
+          x2: iconX + divLen / 2,
+          y2: divY + 4 * scale,
+        });
+      }
+    });
+
+    // ── TOP NAVY HEADER BAND (X = 760 to W, Y = 0 to 410) ──
+    const headerLeft = Math.round(760 * scale);
+    const headerH = Math.round(410 * scale);
     ctx.fillStyle = '#14284b';
+    ctx.fillRect(headerLeft, 0, W - headerLeft, headerH);
+
+    // Left vertical border column framing pegboard
+    ctx.fillRect(headerLeft, headerH, Math.round(80 * scale), H - headerH);
+    // Right vertical border column framing pegboard (near door)
+    const rightColLeft = Math.round(3880 * scale);
+    ctx.fillRect(rightColLeft, 0, W - rightColLeft, H);
+
+    // SRI Logo in Header
+    const logoX = Math.round(1050 * scale);
+    const logoY = Math.round(205 * scale);
+    const logoR = Math.round(42 * scale);
+    drawSriLotusEmblem(ctx, logoX, logoY, logoR, { textCol: '#ffffff' });
+    vrWallBlocks.push({
+      id: 'Header-SRI-Logo',
+      x1: logoX - Math.round(65 * scale),
+      y1: logoY - Math.round(60 * scale),
+      x2: logoX + Math.round(65 * scale),
+      y2: logoY + Math.round(70 * scale),
+    });
+
+    // Thin vertical white divider
+    const divX = Math.round(1270 * scale);
+    const divH = Math.round(180 * scale);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(divX, logoY - divH / 2, Math.max(3, Math.round(4 * scale)), divH);
+    vrWallBlocks.push({
+      id: 'Header-Divider',
+      x1: divX,
+      y1: logoY - divH / 2,
+      x2: divX + 4 * scale,
+      y2: logoY + divH / 2,
+    });
+
+    // "AR / VR LAB" Title
+    const titleFontSz = Math.round(92 * scale);
+    ctx.font = `italic 900 ${titleFontSz}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    const titleX = Math.round(1340 * scale);
+    const arText = 'AR / VR ';
+    ctx.fillText(arText, titleX, logoY);
+    const arW = ctx.measureText(arText).width;
+    ctx.fillStyle = '#ff7a00';
+    ctx.fillText('LAB', titleX + arW, logoY);
+    const labW = ctx.measureText('LAB').width;
+    vrWallBlocks.push({
+      id: 'Header-Title',
+      x1: titleX,
+      y1: logoY - titleFontSz / 2,
+      x2: titleX + arW + labW,
+      y2: logoY + titleFontSz / 2,
+    });
+
+    // Orange diagonal slash at right end of the band
+    ctx.fillStyle = '#ff7a00';
+    ctx.beginPath();
+    ctx.moveTo(3520 * scale, headerH);
+    ctx.lineTo(3690 * scale, headerH);
+    ctx.lineTo(3820 * scale, 0);
+    ctx.lineTo(3650 * scale, 0);
+    ctx.closePath();
+    ctx.fill();
+    vrWallBlocks.push({
+      id: 'Header-Slash',
+      x1: 3520 * scale,
+      y1: 0,
+      x2: 3820 * scale,
+      y2: headerH,
+    });
+
+    // Soft warm LED downward light gradient on alcove wall directly below header
+    const alcoveLeft = Math.round(840 * scale);
+    const alcoveW = rightColLeft - alcoveLeft;
+    const glowGrad = ctx.createLinearGradient(0, headerH, 0, headerH + Math.round(220 * scale));
+    glowGrad.addColorStop(0, 'rgba(255, 235, 180, 0.40)');
+    glowGrad.addColorStop(1, 'rgba(255, 241, 227, 0)');
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(alcoveLeft, headerH, alcoveW, Math.round(220 * scale));
+
+    // Validate safe-areas
+    checkMuralSafeAreas(W, H, vrWallBlocks);
+  });
+
+  muralTex.anisotropy = 16;
+  const muralMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(wallL, wallH),
+    new THREE.MeshBasicMaterial({ map: muralTex })
+  );
+  muralMesh.position.set(0, wallH / 2, 0.01);
+  g.add(muralMesh);
+
+  // 2. White Perforated Pegboard Section (4.50m wide x 2.00m tall)
+  const pegW = 4.50, pegH = 2.00;
+  const pegY = 1.88; // Bottom at 0.88m, top at 2.88m
+  const pegX = 0.25;
+
+  const pegTex = canvasTex(1024, 512, (ctx) => {
+    ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, 0, 1024, 512);
 
-    // Orange circuit tech lines
-    ctx.strokeStyle = '#ff7a00';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(40, 60);
-    ctx.lineTo(240, 60);
-    ctx.lineTo(320, 140);
-    ctx.lineTo(760, 140);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(40, 60, 12, 0, Math.PI * 2);
-    ctx.arc(760, 140, 12, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  const navyPanel = new THREE.Mesh(
-    new THREE.PlaneGeometry(zoneL, 3.2),
-    new THREE.MeshBasicMaterial({ map: navyPanelTex })
-  );
-  navyPanel.position.set(-zoneZ, 1.65, 0.01);
-  g.add(navyPanel);
-
-  // 2. White Perforated Pegboard Section (3 Panels, z = 7.2 to 11.2)
-  const pegTex = canvasTex(512, 256, (ctx) => {
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(0, 0, 512, 256);
-    ctx.fillStyle = '#cbd5e1';
-    for (let r = 16; r < 256; r += 20) {
-      for (let c = 16; c < 512; c += 20) {
+    // Subtle drop shadow under holes
+    ctx.fillStyle = 'rgba(100, 116, 139, 0.35)';
+    for (let r = 16; r < 512; r += 20) {
+      for (let c = 16; c < 1024; c += 20) {
         ctx.beginPath();
-        ctx.arc(c, r, 3.5, 0, Math.PI * 2);
+        ctx.arc(c, r + 0.8, 3.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    // Crisp perforated holes
+    ctx.fillStyle = '#1e293b';
+    for (let r = 16; r < 512; r += 20) {
+      for (let c = 16; c < 1024; c += 20) {
+        ctx.beginPath();
+        ctx.arc(c, r, 3.0, 0, Math.PI * 2);
         ctx.fill();
       }
     }
   });
+  pegTex.anisotropy = 16;
 
-  const pegMat = new THREE.MeshStandardMaterial({ map: pegTex, roughness: 0.6 });
-  const pegBoardW = 3.80, pegBoardH = 1.30, pegY = 2.15;
-  const pegMesh = new THREE.Mesh(new THREE.PlaneGeometry(pegBoardW, pegBoardH), pegMat);
-  pegMesh.position.set(-9.20, pegY, 0.05);
+  const pegMat = new THREE.MeshStandardMaterial({ map: pegTex, roughness: 0.55 });
+  const pegMesh = new THREE.Mesh(new THREE.PlaneGeometry(pegW, pegH), pegMat);
+  pegMesh.position.set(pegX, pegY, 0.035);
   g.add(pegMesh);
 
-  // Metal outer frame around pegboards
-  box(g, pegBoardW + 0.06, 0.04, 0.06, M(0x222226), -9.20, pegY + pegBoardH / 2, 0.04);
-  box(g, pegBoardW + 0.06, 0.04, 0.06, M(0x222226), -9.20, pegY - pegBoardH / 2, 0.04);
+  // Black metal outer frame trim around pegboard
+  const frameMat = M(0x18181c, { roughness: 0.35, metalness: 0.8 });
+  box(g, pegW + 0.04, 0.025, 0.04, frameMat, pegX, pegY + pegH / 2 + 0.012, 0.035);
+  box(g, pegW + 0.04, 0.025, 0.04, frameMat, pegX, pegY - pegH / 2 - 0.012, 0.035);
+  box(g, 0.025, pegH + 0.04, 0.04, frameMat, pegX - pegW / 2 - 0.012, pegY, 0.035);
+  box(g, 0.025, pegH + 0.04, 0.04, frameMat, pegX + pegW / 2 + 0.012, pegY, 0.035);
 
-  // Hanging Generic White VR Headsets and Black Controllers on the Pegboard
-  const pegHeadsetZ = [-8.0, -9.2, -10.4];
-  pegHeadsetZ.forEach((hz) => {
-    // Upper row: Headsets
-    createMiniVrHeadset(g, hz, pegY + 0.28, 0.12);
-    // Lower row: Controller pairs hanging from hooks
-    createMiniVrController(g, hz - 0.18, pegY - 0.25, 0.08);
-    createMiniVrController(g, hz + 0.18, pegY - 0.25, 0.08);
-  });
+  // Warm LED glow strip along top edge of pegboard (emissive mesh, no point lights!)
+  box(g, pegW, 0.015, 0.025, Bm(0xfff0c8), pegX, pegY + pegH / 2, 0.048);
 
-  // 3. Lower Storage Counter with Navy Cabinet Doors and Wooden Top
-  const counterL = 4.40, counterH = 0.86, counterD = 0.65;
-  const counterY = counterH / 2;
-  // Navy cabinet body
-  box(g, counterL, counterH - 0.04, counterD, M(C.navy, { roughness: 0.5 }), -9.20, counterY - 0.02, counterD / 2);
-  // Solid wood countertop
-  box(g, counterL + 0.04, 0.04, counterD + 0.04, M(0xd4a373, { roughness: 0.4 }), -9.20, counterH - 0.02, counterD / 2);
+  // 3. Hanging 6 Generic White VR Headsets (3 columns x 2 rows, dark headstraps)
+  const headsetCols = [-1.30, 0.0, +1.30];
+  const headsetRows = [pegY + 0.50, pegY - 0.12]; // 2.38m and 1.76m
 
-  // 4. Row of 7 Bright Orange Storage Bins on Counter
-  const binLabels = ['SENSORS', 'CABLES', 'CONTROLLERS', 'TRACKERS', 'LENSES', 'STRAPS', 'ADAPTERS'];
-  const binW = 0.48, binD = 0.42, binH = 0.24;
-  binLabels.forEach((label, i) => {
-    const bx = -11.0 + i * 0.60;
-    const by = counterH + binH / 2;
-    // Orange bin body
-    box(g, binW, binH, binD, M(C.orange, { roughness: 0.55 }), bx, by, counterD / 2);
-    // Bin rim / lip
-    box(g, binW + 0.02, 0.02, binD + 0.02, M(0xe06000), bx, counterH + binH, counterD / 2);
-    // White front label badge
-    const labelTex = canvasTex(256, 80, (ctx) => {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 256, 80);
-      ctx.fillStyle = '#14284b';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(label, 128, 40);
+  headsetCols.forEach((cx) => {
+    headsetRows.forEach((ry) => {
+      createGenericVrHeadsetProp(g, pegX + cx, ry, 0.08);
     });
-    const labelMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.08), new THREE.MeshBasicMaterial({ map: labelTex }));
-    labelMesh.position.set(bx, by, counterD + 0.005);
-    g.add(labelMesh);
   });
 
-  // 5. Tall Black-Framed Glass Display Showcase Rack (z = 11.8 to 13.2)
-  const rackL = 1.40, rackH = 2.30, rackD = 0.55;
-  const rackX = -12.40;
-  // Black metal frame pillars
-  box(g, 0.04, rackH, 0.04, M(0x18181c, { metalness: 0.8 }), rackX - rackL / 2, rackH / 2, 0.03);
-  box(g, 0.04, rackH, 0.04, M(0x18181c, { metalness: 0.8 }), rackX + rackL / 2, rackH / 2, 0.03);
-  box(g, 0.04, rackH, 0.04, M(0x18181c, { metalness: 0.8 }), rackX - rackL / 2, rackH / 2, rackD);
-  box(g, 0.04, rackH, 0.04, M(0x18181c, { metalness: 0.8 }), rackX + rackL / 2, rackH / 2, rackD);
-
-  // 4 Tempered Glass Shelves with Warm LED Edge Strips
-  const glassShelfMat = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.35,
-    roughness: 0.1,
-    transmission: 0.85,
-    depthWrite: false,
+  // 4. Hanging 3 Pairs of White VR Controllers below the headsets
+  const controllerY = pegY - 0.65; // 1.23m
+  headsetCols.forEach((cx) => {
+    createGenericVrControllerProp(g, pegX + cx - 0.14, controllerY, 0.07, -0.08);
+    createGenericVrControllerProp(g, pegX + cx + 0.14, controllerY, 0.07, 0.08);
   });
-  [0.45, 0.95, 1.45, 1.95].forEach((sy) => {
-    box(g, rackL - 0.04, 0.012, rackD - 0.04, glassShelfMat, rackX, sy, rackD / 2);
-    // Warm LED edge strip
-    box(g, rackL - 0.06, 0.008, 0.015, Bm(0xfff5e0), rackX, sy - 0.006, rackD);
 
-    // Boxed headsets and accessories on shelves
-    box(g, 0.32, 0.22, 0.26, M(0x1e293b, { roughness: 0.4 }), rackX - 0.35, sy + 0.12, rackD / 2);
-    box(g, 0.28, 0.18, 0.22, M(0x334155, { roughness: 0.4 }), rackX + 0.35, sy + 0.10, rackD / 2);
+  // 5. Wooden-Top Workbench Counter with Black Metal Legs & Lower Wooden Shelf
+  const benchW = 4.70, benchH = 0.85, benchD = 0.65;
+  const benchX = pegX;
+  const woodMat = M(0xd8a878, { roughness: 0.4 });
+  const blackLegMat = M(0x18181c, { metalness: 0.8, roughness: 0.3 });
+
+  // Natural blonde honey oak wooden countertop
+  box(g, benchW, 0.045, benchD, woodMat, benchX, benchH - 0.0225, benchD / 2);
+  // Subtle front bevel trim
+  box(g, benchW + 0.02, 0.012, 0.015, M(0xc69260), benchX, benchH - 0.035, benchD + 0.007);
+
+  // 5 Black square steel leg pairs along bench
+  const legPositions = [-2.15, -1.08, 0.0, +1.08, +2.15];
+  legPositions.forEach((lx) => {
+    // Front leg
+    box(g, 0.04, benchH - 0.045, 0.04, blackLegMat, benchX + lx, (benchH - 0.045) / 2, benchD - 0.035);
+    // Rear leg
+    box(g, 0.04, benchH - 0.045, 0.04, blackLegMat, benchX + lx, (benchH - 0.045) / 2, 0.055);
+    // Horizontal cross-strut between front and back legs
+    box(g, 0.03, 0.03, benchD - 0.08, blackLegMat, benchX + lx, 0.14, benchD / 2);
   });
+
+  // Upper perimeter steel frame rails
+  box(g, benchW - 0.08, 0.035, 0.035, blackLegMat, benchX, benchH - 0.062, benchD - 0.035);
+  box(g, benchW - 0.08, 0.035, 0.035, blackLegMat, benchX, benchH - 0.062, 0.055);
+
+  // Lower wooden storage shelf
+  const shelfY = 0.155;
+  box(g, benchW - 0.08, 0.03, benchD - 0.08, woodMat, benchX, shelfY, benchD / 2);
+
+  // 6. Under-Counter Storage on Lower Shelf (Tidy, zero floating!)
+  const itemFloorY = shelfY + 0.015;
+
+  // Bay 1 (Left): 2 Dark Grey Storage Bins
+  const greyBinMat = M(0x334155, { roughness: 0.55 });
+  [-1.65, -1.20].forEach((bx) => {
+    createStorageBin(g, benchX + bx, itemFloorY, benchD / 2, 0.38, 0.22, 0.48, greyBinMat);
+  });
+
+  // Bay 2 (Middle-Left): 2 Orange Storage Bins
+  const orangeBinMat = M(0xff7a00, { roughness: 0.55 });
+  [-0.60, -0.15].forEach((bx) => {
+    createStorageBin(g, benchX + bx, itemFloorY, benchD / 2, 0.38, 0.22, 0.48, orangeBinMat);
+  });
+
+  // Bay 3 (Middle-Right): 1 Black Hard Flight / Equipment Case with Silver Latches
+  createFlightHardCase(g, benchX + 0.55, itemFloorY, benchD / 2);
+
+  // Bay 4 (Right): 4 Transparent Storage Boxes (Stacked 2x2)
+  [+1.35, +1.80].forEach((tx) => {
+    createTransparentStorageBox(g, benchX + tx, itemFloorY, benchD / 2);
+    createTransparentStorageBox(g, benchX + tx, itemFloorY + 0.15, benchD / 2);
+  });
+
+  // 7. Countertop Potted Plants
+  // Left: Leafy potted plant with cascading trailing vines hanging over wooden edge
+  createTrailingIvyPlant(g, benchX - 2.05, benchH, benchD / 2);
+  createLeafyPlant(g, benchX - 1.92, benchH, benchD / 2, { scale: 0.75, potColor: 0xffffff });
+
+  // Right: Lush leafy potted plant
+  createLeafyPlant(g, benchX + 2.05, benchH, benchD / 2, { scale: 0.85, potColor: 0xffffff });
+
+  // Soft contact shadow under the bench
+  const benchShadow = new THREE.Mesh(
+    new THREE.PlaneGeometry(benchW + 0.2, benchD + 0.1),
+    new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false })
+  );
+  benchShadow.rotation.x = -Math.PI / 2;
+  benchShadow.position.set(benchX, 0.005, benchD / 2);
+  g.add(benchShadow);
 
   parent.add(g);
 }
@@ -1125,8 +1319,28 @@ export function buildTeachingZone(parent, cx, floorY) {
   const tableLegMesh = new THREE.InstancedMesh(tableLegGeom, legMat, totalTables * 4);
   const tableBraceMesh = new THREE.InstancedMesh(tableBraceGeom, legMat, totalTables * 2);
 
+  // Perforated task chair back texture
+  const perforatedDotTex = canvasTex(256, 256, (ctx) => {
+    ctx.fillStyle = '#1c1c22';
+    ctx.fillRect(0, 0, 256, 256);
+    ctx.fillStyle = '#0a0a0e';
+    for (let py = 12; py < 256; py += 16) {
+      for (let px = 12; px < 256; px += 16) {
+        ctx.beginPath();
+        ctx.arc(px, py, 3.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+  perforatedDotTex.anisotropy = 4;
+  const perforatedBackMat = new THREE.MeshStandardMaterial({
+    map: perforatedDotTex,
+    roughness: 0.55,
+    metalness: 0.15,
+  });
+
   const chairSeatMesh = new THREE.InstancedMesh(seatGeom, navySeatMat, totalChairs);
-  const chairBackMesh = new THREE.InstancedMesh(backGeom, blackFrameMat, totalChairs);
+  const chairBackMesh = new THREE.InstancedMesh(backGeom, perforatedBackMat, totalChairs);
   const chairLegMesh = new THREE.InstancedMesh(chairLegGeom, blackFrameMat, totalChairs * 4);
 
   const dummy = new THREE.Object3D();
@@ -1895,11 +2109,11 @@ function createMiniBookStack(parent, x, y, z) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** SRI Lotus Logo Helper */
-function drawSriLotusEmblem(ctx, cx, cy, r) {
+function drawSriLotusEmblem(ctx, cx, cy, r, opts = {}) {
   const treeTop = cy - r * 1.05;
   const stemBase = cy - r * 0.05;
 
-  ctx.fillStyle = '#c05010';
+  ctx.fillStyle = opts.stemCol || '#c05010';
   ctx.fillRect(cx - r * 0.07, treeTop + r * 0.55, r * 0.14, stemBase - (treeTop + r * 0.55));
 
   const leafCount = 13;
@@ -1913,7 +2127,7 @@ function drawSriLotusEmblem(ctx, cx, cy, r) {
     const mix = Math.sin(t * Math.PI);
     const red = Math.round(200 + 30 * mix);
     const grn = Math.round(80 + 20 * (1 - Math.abs(t - 0.5) * 2));
-    ctx.fillStyle = `rgb(${red},${grn},10)`;
+    ctx.fillStyle = opts.leafCol || `rgb(${red},${grn},10)`;
     ctx.beginPath();
     ctx.arc(lx, ly, lr, 0, Math.PI * 2);
     ctx.fill();
@@ -1921,7 +2135,7 @@ function drawSriLotusEmblem(ctx, cx, cy, r) {
 
   // "SRI" in bold serif
   const fontSize = Math.round(r * 1.05);
-  ctx.fillStyle = '#14284b';
+  ctx.fillStyle = opts.textCol || '#14284b';
   ctx.font = `900 ${fontSize}px Georgia, serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
@@ -1929,7 +2143,7 @@ function drawSriLotusEmblem(ctx, cx, cy, r) {
 
   // Orange swoosh underline
   const swY = stemBase + r * 0.08 + fontSize + r * 0.08;
-  ctx.strokeStyle = '#ff7a00';
+  ctx.strokeStyle = opts.swooshCol || '#ff7a00';
   ctx.lineWidth = Math.max(4, r * 0.13);
   ctx.lineCap = 'round';
   ctx.beginPath();
@@ -2033,10 +2247,10 @@ function drawVrPersonSilhouette(ctx, cx, cy, scale = 1.0) {
   ctx.restore();
 }
 
-/** Vector Icons for the Navy Panel and TV Screen */
-function drawPanelVectorIcon(ctx, cx, cy, type, scale = 1.0) {
+/** Vector Icons for the Navy Panel, VR Wall and TV Screen */
+function drawPanelVectorIcon(ctx, cx, cy, type, scale = 1.0, strokeColor = '#ffffff') {
   ctx.save();
-  ctx.strokeStyle = '#ffffff';
+  ctx.strokeStyle = strokeColor;
   ctx.lineWidth = Math.max(3, Math.round(4.5 * scale));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
@@ -2075,7 +2289,7 @@ function drawPanelVectorIcon(ctx, cx, cy, type, scale = 1.0) {
     ctx.lineTo(cx + Math.cos(0.2 * Math.PI) * rad + 5 * scale, cy + Math.sin(0.2 * Math.PI) * rad - 3 * scale);
     ctx.stroke();
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = strokeColor;
     ctx.font = `bold ${Math.round(14 * scale)}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -2093,6 +2307,144 @@ function drawPanelVectorIcon(ctx, cx, cy, type, scale = 1.0) {
     ctx.stroke();
   }
   ctx.restore();
+}
+
+/** Generic White VR Headset on Pegboard Hook */
+function createGenericVrHeadsetProp(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const whiteMat = M(0xf8fafc, { roughness: 0.25 });
+  const darkMat = M(0x18181c, { roughness: 0.5 });
+  const hookMat = M(0x222226, { metalness: 0.8, roughness: 0.3 });
+
+  // Pegboard black metal hook
+  cyl(g, 0.005, 0.005, 0.08, hookMat, 0, 0, -0.04, 8).rotation.x = Math.PI / 2;
+
+  // Front visor body (rounded, modern VR headset)
+  box(g, 0.26, 0.13, 0.11, whiteMat, 0, 0, 0.05);
+
+  // Black side hinge/mount blocks
+  box(g, 0.025, 0.035, 0.04, darkMat, -0.135, 0, 0.03);
+  box(g, 0.025, 0.035, 0.04, darkMat, +0.135, 0, 0.03);
+
+  // Two front optical camera tracking dots
+  cyl(g, 0.007, 0.007, 0.004, M(0x0a0a0e), -0.08, 0, 0.106, 12).rotation.x = Math.PI / 2;
+  cyl(g, 0.007, 0.007, 0.004, M(0x0a0a0e), +0.08, 0, 0.106, 12).rotation.x = Math.PI / 2;
+
+  // Dark curved headstrap
+  const strapGeom = new THREE.TorusGeometry(0.09, 0.012, 6, 18, Math.PI);
+  const strapMesh = new THREE.Mesh(strapGeom, darkMat);
+  strapMesh.rotation.x = Math.PI / 2;
+  strapMesh.position.set(0, 0.02, 0.01);
+  g.add(strapMesh);
+
+  parent.add(g);
+}
+
+/** Generic White VR Controller on Pegboard Hook */
+function createGenericVrControllerProp(parent, x, y, z, tiltZ = 0) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  g.rotation.z = tiltZ;
+
+  const whiteMat = M(0xf8fafc, { roughness: 0.25 });
+  const darkMat = M(0x18181c, { roughness: 0.5 });
+  const hookMat = M(0x222226, { metalness: 0.8, roughness: 0.3 });
+
+  // Metal hook
+  cyl(g, 0.004, 0.004, 0.06, hookMat, 0, 0.05, -0.03, 8).rotation.x = Math.PI / 2;
+
+  // Handle grip
+  cyl(g, 0.014, 0.012, 0.14, whiteMat, 0, -0.02, 0.02, 12);
+
+  // Tracking ring / halo on top
+  const haloGeom = new THREE.TorusGeometry(0.042, 0.007, 8, 20);
+  const haloMesh = new THREE.Mesh(haloGeom, whiteMat);
+  haloMesh.rotation.x = 0.45;
+  haloMesh.position.set(0, 0.045, 0.03);
+  g.add(haloMesh);
+
+  // Black thumbstick and button cluster
+  cyl(g, 0.006, 0.006, 0.012, darkMat, 0, 0.045, 0.015, 8);
+
+  parent.add(g);
+}
+
+/** Tidy Storage Bin with Top Lip */
+function createStorageBin(parent, x, y, z, w, h, d, mat) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  // Bin main box body
+  box(g, w, h, d, mat, 0, h / 2, 0);
+  // Reinforced molded top lip
+  box(g, w + 0.02, 0.018, d + 0.02, mat, 0, h - 0.009, 0);
+  // Recessed front handle pocket
+  box(g, 0.12, 0.035, 0.012, M(0x18181c), 0, h - 0.06, d / 2 + 0.002);
+
+  parent.add(g);
+}
+
+/** Black Flight / Equipment Hard Case with Silver Latches & Braces */
+function createFlightHardCase(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const w = 0.62, h = 0.22, d = 0.44;
+  const blackShellMat = M(0x111827, { roughness: 0.5 });
+  const silverMetalMat = M(0xd1d5db, { metalness: 0.9, roughness: 0.2 });
+
+  // Main case body
+  box(g, w, h, d, blackShellMat, 0, h / 2, 0);
+
+  // Aluminum center rim extrusion
+  box(g, w + 0.006, 0.015, d + 0.006, silverMetalMat, 0, h / 2, 0);
+
+  // 4 Silver corner edge protectors on the front
+  [-w / 2 + 0.025, w / 2 - 0.025].forEach((cx) => {
+    [0.025, h - 0.025].forEach((cy) => {
+      box(g, 0.04, 0.04, 0.012, silverMetalMat, cx, cy, d / 2 + 0.002);
+    });
+  });
+
+  // 2 Silver draw-latches on front face
+  box(g, 0.045, 0.055, 0.014, silverMetalMat, -0.16, h / 2, d / 2 + 0.004);
+  box(g, 0.045, 0.055, 0.014, silverMetalMat, +0.16, h / 2, d / 2 + 0.004);
+
+  // Center carry handle
+  box(g, 0.14, 0.018, 0.035, M(0x1f2937), 0, h / 2, d / 2 + 0.025);
+
+  parent.add(g);
+}
+
+/** Clear Frosted Acrylic Storage Box with Visible Accessories Inside */
+function createTransparentStorageBox(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const w = 0.38, h = 0.13, d = 0.44;
+  const acrylicMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.36,
+    roughness: 0.1,
+    transmission: 0.82,
+    depthWrite: false,
+  });
+
+  // Transparent box body
+  box(g, w, h, d, acrylicMat, 0, h / 2, 0);
+
+  // Opaque lid and rim latches
+  box(g, w + 0.01, 0.014, d + 0.01, M(0xe2e8f0, { roughness: 0.4 }), 0, h - 0.007, 0);
+  box(g, 0.04, 0.025, 0.015, M(0x94a3b8), -w / 2 - 0.004, h - 0.015, 0);
+  box(g, 0.04, 0.025, 0.015, M(0x94a3b8), +w / 2 + 0.004, h - 0.015, 0);
+
+  // Stored hardware components inside box
+  box(g, 0.22, 0.06, 0.26, M(0x1e293b, { roughness: 0.5 }), 0, 0.035, 0);
+
+  parent.add(g);
 }
 
 /** Dev-Only Safe Area Check to Assert Zero Overlaps and Zero Margin Violations */

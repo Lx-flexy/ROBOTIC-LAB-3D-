@@ -34,18 +34,33 @@ export function createInteractiveDoor(scene) {
   const DOOR_H = 2.40;        // Doorway height
   const HINGE_Z = DOOR_Z - DOOR_W / 2; // Hinge edge at z = 4.15m
 
-  // 1. OUTER DOOR FRAME (Fixed around wall opening)
-  const frameMat = M(C.black, { roughness: 0.45, metalness: 0.3 });
-  const frameDepth = 0.22; // Covers wall thickness
+  // 1. OUTER DOOR FRAME (Fixed around wall opening with polygonOffset to prevent z-fighting)
+  const frameMat = new THREE.MeshStandardMaterial({
+    color: C.black,
+    roughness: 0.45,
+    metalness: 0.3,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+  });
+  const frameDepth = 0.24; // Covers wall thickness cleanly with margin on both sides
 
-  // Left jamb (at hinge side, z = 4.15 - 0.04)
-  box(g, frameDepth, DOOR_H + 0.06, 0.06, frameMat, DOOR_X + 0.08, (DOOR_H + 0.06) / 2, HINGE_Z - 0.03);
-  // Right jamb (at latch side, z = 5.45 + 0.04)
-  box(g, frameDepth, DOOR_H + 0.06, 0.06, frameMat, DOOR_X + 0.08, (DOOR_H + 0.06) / 2, DOOR_Z + DOOR_W / 2 + 0.03);
+  // Left jamb (at hinge side, z = 4.15 - 0.035)
+  box(g, frameDepth, DOOR_H + 0.08, 0.07, frameMat, DOOR_X + 0.08, (DOOR_H + 0.08) / 2, HINGE_Z - 0.035);
+  // Right jamb (at latch side, z = 5.45 + 0.035)
+  box(g, frameDepth, DOOR_H + 0.08, 0.07, frameMat, DOOR_X + 0.08, (DOOR_H + 0.08) / 2, DOOR_Z + DOOR_W / 2 + 0.035);
   // Top header beam
-  box(g, frameDepth, 0.06, DOOR_W + 0.12, frameMat, DOOR_X + 0.08, DOOR_H + 0.03, DOOR_Z);
-  // Floor threshold plate (dark satin metal at y = 0.052)
-  box(g, frameDepth + 0.04, 0.008, DOOR_W + 0.02, M(0x222226, { metalness: 0.8, roughness: 0.3 }), DOOR_X + 0.08, 0.052, DOOR_Z);
+  box(g, frameDepth, 0.08, DOOR_W + 0.14, frameMat, DOOR_X + 0.08, DOOR_H + 0.04, DOOR_Z);
+  // Floor threshold plate (dark satin metal at y = 0.056, cleanly elevated above floor slabs with polygonOffset)
+  const threshMat = new THREE.MeshStandardMaterial({
+    color: 0x222226,
+    metalness: 0.8,
+    roughness: 0.3,
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
+  });
+  box(g, frameDepth + 0.04, 0.012, DOOR_W + 0.04, threshMat, DOOR_X + 0.08, 0.056, DOOR_Z);
 
   // 2. NAVY ROUNDED PILL SIGN ABOVE DOOR ("ROBOTICS LAB >>>")
   const signW = 1.45, signH = 0.34;
