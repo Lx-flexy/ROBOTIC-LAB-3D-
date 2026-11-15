@@ -40,7 +40,7 @@ const COLLIDERS = [
   // AR / VR Lab Right Study Tables block
   { xMin: 28.0, xMax: 31.4, zMin: 5.2, zMax: 9.5 },
   // AR / VR Lab VR Counter & Showcase
-  { xMin: 19.7, xMax: 20.6, zMin: 6.2, zMax: 13.5 },
+  { xMin: 20.15, xMax: 20.95, zMin: 6.2, zMax: 13.5 },
   // AR / VR Lab Lounge Bookcases & Wall
   { xMin: 22.2, xMax: 31.4, zMin: 15.8, zMax: 16.4 },
   // AR / VR Lab Lounge Coffee Table

@@ -43,14 +43,15 @@ export function createInteractiveDoor(scene) {
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
   });
-  const frameDepth = 0.24; // Covers wall thickness cleanly with margin on both sides
+  const frameDepth = 0.46; // Covers 0.40m wall thickness cleanly with margin on both sides (x = 19.77 to 20.23)
+  const frameCenterX = 20.00;
 
   // Left jamb (at hinge side, z = 4.15 - 0.035)
-  box(g, frameDepth, DOOR_H + 0.08, 0.07, frameMat, DOOR_X + 0.08, (DOOR_H + 0.08) / 2, HINGE_Z - 0.035);
+  box(g, frameDepth, DOOR_H + 0.08, 0.07, frameMat, frameCenterX, (DOOR_H + 0.08) / 2, HINGE_Z - 0.035);
   // Right jamb (at latch side, z = 5.45 + 0.035)
-  box(g, frameDepth, DOOR_H + 0.08, 0.07, frameMat, DOOR_X + 0.08, (DOOR_H + 0.08) / 2, DOOR_Z + DOOR_W / 2 + 0.035);
+  box(g, frameDepth, DOOR_H + 0.08, 0.07, frameMat, frameCenterX, (DOOR_H + 0.08) / 2, DOOR_Z + DOOR_W / 2 + 0.035);
   // Top header beam
-  box(g, frameDepth, 0.08, DOOR_W + 0.14, frameMat, DOOR_X + 0.08, DOOR_H + 0.04, DOOR_Z);
+  box(g, frameDepth, 0.08, DOOR_W + 0.14, frameMat, frameCenterX, DOOR_H + 0.04, DOOR_Z);
   // Floor threshold plate (dark satin metal at y = 0.056, cleanly elevated above floor slabs with polygonOffset)
   const threshMat = new THREE.MeshStandardMaterial({
     color: 0x222226,
@@ -60,7 +61,7 @@ export function createInteractiveDoor(scene) {
     polygonOffsetFactor: -1,
     polygonOffsetUnits: -1,
   });
-  box(g, frameDepth + 0.04, 0.012, DOOR_W + 0.04, threshMat, DOOR_X + 0.08, 0.056, DOOR_Z);
+  box(g, frameDepth + 0.04, 0.012, DOOR_W + 0.04, threshMat, frameCenterX, 0.056, DOOR_Z);
 
   // 2. NAVY ROUNDED PILL SIGN ABOVE DOOR ("ROBOTICS LAB >>>")
   const signW = 1.45, signH = 0.34;

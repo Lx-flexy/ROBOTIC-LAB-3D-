@@ -142,19 +142,10 @@ export function buildArVrLab(scene) {
     // East Wall (X = xMax, Large Window Wall)
     box(g, wallThick, roomH, roomL, wallMat, xMax + wallThick / 2, floorY + roomH / 2, centerZ);
 
-    // West Wall (X = xMin, Door Side adjoining main robotics lab)
-    // Split around the door opening at z = 4.15 to 5.45 (height 2.40m)
-    const doorZMin = 4.15;
-    const doorZMax = 5.45;
-    const doorH = 2.40;
-    // West Wall North portion (zMin to 4.15m)
-    const wNorthL = doorZMin - zMin; // 1.75m
-    box(g, wallThick, roomH, wNorthL, wallMat, xMin - wallThick / 2, floorY + roomH / 2, zMin + wNorthL / 2);
-    // West Wall South portion (5.45m to zMax)
-    const wSouthL = zMax - doorZMax; // 10.95m
-    box(g, wallThick, roomH, wSouthL, wallMat, xMin - wallThick / 2, floorY + roomH / 2, doorZMax + wSouthL / 2);
-    // Header beam above door (y = 2.45 to 3.65)
-    box(g, wallThick, roomH - doorH, doorZMax - doorZMin, wallMat, xMin - wallThick / 2, floorY + doorH + (roomH - doorH) / 2, (doorZMin + doorZMax) / 2);
+    // West Wall (X = 20.20 inner surface, adjoining main robotics lab)
+    // The main building shell in building.js provides the wall from z = -15 to 15.00 at X in [19.80, 20.20].
+    // Here we extend the south section flush from z = 15.00 to zMax = 16.40:
+    box(g, 0.40, roomH, zMax - 15.00, wallMat, 20.00, floorY + roomH / 2, (15.00 + zMax) / 2);
 
     // Skirting boards (Navy base with orange stripe)
     const skH = 0.12;
@@ -167,15 +158,15 @@ export function buildArVrLab(scene) {
     // East skirting
     box(g, 0.03, skH, roomL, navyMat, xMax - 0.015, floorY + skH / 2, centerZ);
     box(g, 0.032, 0.015, roomL, orangeMat, xMax - 0.015, floorY + skH, centerZ);
-    // West skirting (split cleanly around door frame to prevent co-planar overlap)
+    // West skirting (flush with inner wall surface at X = 20.20, split cleanly around door frame)
     const wNorthSkLen = Math.max(0.1, 4.08 - zMin);
-    box(g, 0.03, skH, wNorthSkLen, navyMat, xMin + 0.015, floorY + skH / 2, zMin + wNorthSkLen / 2);
-    box(g, 0.032, 0.015, wNorthSkLen, orangeMat, xMin + 0.015, floorY + skH, zMin + wNorthSkLen / 2);
+    box(g, 0.03, skH, wNorthSkLen, navyMat, 20.20 + 0.015, floorY + skH / 2, zMin + wNorthSkLen / 2);
+    box(g, 0.032, 0.015, wNorthSkLen, orangeMat, 20.20 + 0.015, floorY + skH, zMin + wNorthSkLen / 2);
 
     const wSouthSkStart = 5.52;
     const wSouthSkLen = Math.max(0.1, zMax - wSouthSkStart);
-    box(g, 0.03, skH, wSouthSkLen, navyMat, xMin + 0.015, floorY + skH / 2, wSouthSkStart + wSouthSkLen / 2);
-    box(g, 0.032, 0.015, wSouthSkLen, orangeMat, xMin + 0.015, floorY + skH, wSouthSkStart + wSouthSkLen / 2);
+    box(g, 0.03, skH, wSouthSkLen, navyMat, 20.20 + 0.015, floorY + skH / 2, wSouthSkStart + wSouthSkLen / 2);
+    box(g, 0.032, 0.015, wSouthSkLen, orangeMat, 20.20 + 0.015, floorY + skH, wSouthSkStart + wSouthSkLen / 2);
   } catch (err) {
     console.error('[AR/VR Lab] Architectural walls build failed:', err);
   }
@@ -202,7 +193,7 @@ export function buildArVrLab(scene) {
   // 6. WEST WALL: VR EQUIPMENT ZONE (PEGBOARD, BINS, GLASS RACK)
   // ═══════════════════════════════════════════════════════════════════════════
   try {
-    buildVrEquipmentZone(g, xMin, floorY, zMin, zMax);
+    buildVrEquipmentZone(g, 20.20, floorY, zMin, zMax);
   } catch (err) {
     console.error('[AR/VR Lab] VR Equipment Zone build failed:', err);
   }
@@ -869,12 +860,12 @@ function buildEastWindowWall(parent, xMax, cz, floorY, roomL, roomH) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VR EQUIPMENT ZONE (Right / West Wall, X = xMin)
+// VR EQUIPMENT ZONE (Right / West Wall, inner surface at X = 20.20m)
 // ─────────────────────────────────────────────────────────────────────────────
-function buildVrEquipmentZone(parent, xMin, floorY, zMin, zMax) {
+function buildVrEquipmentZone(parent, wallX = 20.20, floorY, zMin, zMax) {
   const g = new THREE.Group();
   // Centered at Z = 9.60m, rotated so local -X is Left (South/Lounge) and +X is Right (North/Door)
-  g.position.set(xMin, floorY, 9.60);
+  g.position.set(wallX, floorY, 9.60);
   g.rotation.y = Math.PI / 2;
 
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -1053,7 +1044,12 @@ function buildVrEquipmentZone(parent, xMin, floorY, zMin, zMax) {
   muralTex.anisotropy = 16;
   const muralMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(wallL, wallH),
-    new THREE.MeshBasicMaterial({ map: muralTex })
+    new THREE.MeshBasicMaterial({
+      map: muralTex,
+      polygonOffset: true,
+      polygonOffsetFactor: -1,
+      polygonOffsetUnits: -1,
+    })
   );
   muralMesh.position.set(0, wallH / 2, 0.01);
   g.add(muralMesh);
@@ -1088,7 +1084,13 @@ function buildVrEquipmentZone(parent, xMin, floorY, zMin, zMax) {
   });
   pegTex.anisotropy = 16;
 
-  const pegMat = new THREE.MeshStandardMaterial({ map: pegTex, roughness: 0.55 });
+  const pegMat = new THREE.MeshStandardMaterial({
+    map: pegTex,
+    roughness: 0.55,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  });
   const pegMesh = new THREE.Mesh(new THREE.PlaneGeometry(pegW, pegH), pegMat);
   pegMesh.position.set(pegX, pegY, 0.035);
   g.add(pegMesh);
