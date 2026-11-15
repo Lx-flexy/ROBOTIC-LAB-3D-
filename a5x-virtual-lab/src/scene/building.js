@@ -226,9 +226,7 @@ export function buildShell(scene) {
     doors.push({ pivot, s });
   });
 
-  // ──────── FLOOR GUIDE LINES ────────
-  box(scene, 0.15, 0.02, 28, M(C.orange), -1.2, 0.06, 0);
-  box(scene, 0.15, 0.02, 28, M(C.orange), 1.2, 0.06, 0);
+  // ──────── FLOOR GUIDE LINES (Removed - static decorative floor stripes) ────────
 
   // ──────── CEILING LIGHTS (tube lights) ────────
   for (let x = -15; x <= 15; x += 7.5) {

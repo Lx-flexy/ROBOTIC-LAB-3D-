@@ -1102,87 +1102,482 @@ export function createCodingZoneMural(scene) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   4. MAIN BACK-WALL MURAL  (between zones, x = 0, z = -14.73)
-   "Build · Learn · Innovate" + side tech icons
-   y = 4.4, H = 2.4m  Canvas: 1600 × 540
+   4. DESIGNING ZONE MURAL (Reference-matched full painted wall)
+   Back wall center, x = 0.0, z = -14.78   Full wall height (5.76m), W = 8.5m
+   Canvas: 4096 × 2764
+   Features:
+   • Warm cream/peach base (#fff1e3) painted directly on wall (no floating panel)
+   • Top centre: Authentic SRI Lotus Logo with horizontal orange flanking lines
+   • Navy rounded-hexagon title banner with white pen-nib/bezier curve icon,
+     orange slash divider, and bold white "Designing" / "Zone"
+   • Dynamic offset orange shadow shape behind title banner
+   • Stepped orange circuit traces on both sides of title
+   • Left vertical column of 5 stacked orange-outline hexagons with clean labels:
+     3D Modeling, Graphic Design, Photo & Illustration, Product Design, AR / VR Design
+   • Bottom-left bold orange diagonal stripes
+   • Right bold orange diagonal stripe behind storage rack
+   • Dark skirting board along floor line
 ═══════════════════════════════════════════════════════════════════ */
-export function createMainWallMural(scene) {
-  const W = 1600, H = 540;
+export function createDesigningZoneMural(scene) {
+  const W = 4096, H = 2764;
   const tex = canvasTex(W, H, (g) => {
-    g.fillStyle = '#fff8f0'; g.fillRect(0, 0, W, H);
+    // 1. Base Wall Colour: warm cream/peach (seamless blend with room back wall)
+    g.fillStyle = '#fff1e3';
+    g.fillRect(0, 0, W, H);
 
-    // Orange bottom bar
-    g.fillStyle = '#ff7a00'; g.fillRect(0, H-12, W, 12);
+    // 2. Dark skirting board along bottom (matching room floor baseboard)
+    g.fillStyle = '#1c1c20';
+    g.fillRect(0, H - 42, W, 42);
 
-    // ── Centre: stacked pills ──
-    const pW=380, pH=86, pR=15;
-    const pX = W/2;
-    [
-      { t:'Build',    bg:'#14284b', fg:'#fff', y: 32 },
-      { t:'Learn',    bg:'#ff7a00', fg:'#fff', y:132 },
-      { t:'Innovate', bg:'#ff7a00', fg:'#fff', y:232 },
-    ].forEach(({ t, bg, fg, y }) => {
-      g.fillStyle = bg;
-      g.beginPath(); g.roundRect(pX - pW/2, y, pW, pH, pR); g.fill();
-      txt(g, t, pX, y + pH/2, 50, fg);
-    });
+    // 3. Bottom-Left Bold Orange Diagonal Stripes
+    g.fillStyle = '#ff7a00';
+    // Stripe 1 (outer lower)
+    g.beginPath();
+    g.moveTo(0, 2460);
+    g.lineTo(240, 2220);
+    g.lineTo(760, 2740);
+    g.lineTo(520, 2740);
+    g.closePath();
+    g.fill();
 
-    // SRI logo small below pills
-    sriLogo(g, pX, 400, 44);
+    // Stripe 2 (inner wider stripe)
+    g.beginPath();
+    g.moveTo(260, 2740);
+    g.lineTo(840, 2160);
+    g.lineTo(1080, 2400);
+    g.lineTo(500, 2740);
+    g.closePath();
+    g.fill();
 
-    // ── LEFT icons: Coding, Electronics, Robotics ──
-    const leftX = 180;
-    [
-      { l:'Coding',      f:ico.code },
-      { l:'Electronics', f:ico.chip },
-      { l:'Robotics',    f:ico.robot },
-    ].forEach(({ l, f }, i) => {
-      const cy = 100 + i*150;
-      g.strokeStyle = '#14284b'; g.fillStyle = 'rgba(20,40,75,0.06)';
-      g.lineWidth = 4;
-      g.beginPath(); g.roundRect(leftX-100, cy-60, 200, 120, 12); g.fill(); g.stroke();
-      f(g, leftX, cy-14, 44);
-      txt(g, l, leftX, cy+54, 26, '#14284b');
-    });
+    // 4. Right Bold Orange Diagonal Stripe (painted behind the industrial rack)
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.moveTo(3340, 2740);
+    g.lineTo(3920, 1380);
+    g.lineTo(4096, 1380);
+    g.lineTo(4096, 1720);
+    g.lineTo(3660, 2740);
+    g.closePath();
+    g.fill();
 
-    // ── RIGHT icons: Drones, AR/VR, AI/ML ──
-    const rightX = W - 180;
-    [
-      { l:'Drones', f:ico.drone },
-      { l:'AR / VR', f:ico.vr },
-      { l:'AI / ML', f:ico.ai },
-    ].forEach(({ l, f }, i) => {
-      const cy = 100 + i*150;
-      g.strokeStyle = '#14284b'; g.fillStyle = 'rgba(20,40,75,0.06)';
-      g.lineWidth = 4;
-      g.beginPath(); g.roundRect(rightX-100, cy-60, 200, 120, 12); g.fill(); g.stroke();
-      f(g, rightX, cy-14, 44);
-      txt(g, l, rightX, cy+54, 26, '#14284b');
-    });
+    // 5. Top Centre: Authentic SRI Lotus Logo with Flanking Lines
+    const logoCx = W / 2; // 2048
+    const logoCy = 270;
+    const logoR = 76;
+    sriLogo(g, logoCx, logoCy, logoR);
 
-    // Gear decor
-    function gd(cx, cy, r) {
-      const t=8; g.fillStyle='#ff7a00';
+    // Flanking horizontal orange lines
+    g.fillStyle = '#ff7a00';
+    // Left flanking line
+    g.beginPath();
+    g.roundRect(1120, logoCy - 4, 480, 8, 4);
+    g.fill();
+    // Right flanking line
+    g.beginPath();
+    g.roundRect(2496, logoCy - 4, 480, 8, 4);
+    g.fill();
+
+    // 6. Title Banner: Navy Rounded Hexagon with Offset Orange Shadow
+    const bx = 2048, by = 680;
+    const bw = 1860, bh = 430;
+    const inX = 160;
+
+    function drawHexBanner(cx, cy, w, h, inset) {
       g.beginPath();
-      for (let i=0;i<t*2;i++) {
-        const a=(i/(t*2))*Math.PI*2;
-        const rad=i%2===0?r:r*.74;
-        const px=cx+Math.cos(a)*rad, py=cy+Math.sin(a)*rad;
-        i===0?g.moveTo(px,py):g.lineTo(px,py);
-      }
-      g.closePath(); g.fill();
-      g.fillStyle='#fff8f0'; g.beginPath(); g.arc(cx,cy,r*.36,0,Math.PI*2); g.fill();
+      g.moveTo(cx - w / 2 + inset, cy - h / 2);
+      g.lineTo(cx + w / 2 - inset, cy - h / 2);
+      g.lineTo(cx + w / 2, cy);
+      g.lineTo(cx + w / 2 - inset, cy + h / 2);
+      g.lineTo(cx - w / 2 + inset, cy + h / 2);
+      g.lineTo(cx - w / 2, cy);
+      g.closePath();
     }
-    gd(W*.32, 290, 24); gd(W*.68, 270, 18);
+
+    // Offset orange shadow banner
+    g.fillStyle = '#ff7a00';
+    drawHexBanner(bx + 28, by + 32, bw, bh, inX);
+    g.fill();
+
+    // Front navy banner
+    g.fillStyle = '#14284b';
+    drawHexBanner(bx, by, bw, bh, inX);
+    g.fill();
+
+    // White Pen-Nib / Bezier Curve Icon inside left side of banner
+    const iconX = bx - bw / 2 + 340, iconY = by;
+
+    // Bezier curve arc on top
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = 14;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(iconX - 95, iconY - 26);
+    g.bezierCurveTo(iconX - 60, iconY - 88, iconX + 60, iconY - 88, iconX + 95, iconY - 26);
+    g.stroke();
+
+    // Tangent handle lines
+    g.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+    g.lineWidth = 6;
+    g.beginPath();
+    g.moveTo(iconX - 95, iconY - 26);
+    g.lineTo(iconX - 95, iconY - 60);
+    g.moveTo(iconX + 95, iconY - 26);
+    g.lineTo(iconX + 95, iconY - 60);
+    g.moveTo(iconX - 45, iconY - 82);
+    g.lineTo(iconX + 45, iconY - 82);
+    g.stroke();
+
+    // 3 Square control point handle handles
+    function drawHandle(hx, hy) {
+      g.fillStyle = '#ffffff';
+      g.fillRect(hx - 12, hy - 12, 24, 24);
+      g.fillStyle = '#14284b';
+      g.fillRect(hx - 6, hy - 6, 12, 12);
+    }
+    drawHandle(iconX - 95, iconY - 26);
+    drawHandle(iconX, iconY - 82);
+    drawHandle(iconX + 95, iconY - 26);
+
+    // Fountain pen drafting nib pointing down
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.moveTo(iconX - 52, iconY - 6);
+    g.lineTo(iconX + 52, iconY - 6);
+    g.lineTo(iconX + 38, iconY + 36);
+    g.lineTo(iconX + 6, iconY + 84);
+    g.lineTo(iconX - 6, iconY + 84);
+    g.lineTo(iconX - 38, iconY + 36);
+    g.closePath();
+    g.fill();
+
+    // Nib ink breather hole and slit
+    g.fillStyle = '#14284b';
+    g.beginPath();
+    g.arc(iconX, iconY + 34, 7, 0, Math.PI * 2);
+    g.fill();
+    g.strokeStyle = '#14284b';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.moveTo(iconX, iconY + 41);
+    g.lineTo(iconX, iconY + 85);
+    g.stroke();
+
+    // Orange Slash Divider /
+    const slashX = bx - bw / 2 + 630;
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 20;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(slashX - 25, by + 120);
+    g.lineTo(slashX + 25, by - 120);
+    g.stroke();
+
+    // Two-line bold white title: "Designing" / "Zone"
+    const textX = bx - 140;
+    g.fillStyle = '#ffffff';
+    g.font = '900 162px "Segoe UI", Arial, sans-serif';
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+    g.fillText('Designing', textX, by - 86);
+    g.fillText('Zone', textX, by + 86);
+
+    // 7. Orange Circuit Traces (stepping out with circular node dots)
+    g.strokeStyle = '#ff7a00';
+    g.fillStyle = '#ff7a00';
+    g.lineWidth = 14;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+
+    function dot(x, y, r = 18) {
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fill();
+    }
+
+    // Top-left traces
+    g.beginPath();
+    g.moveTo(1050, 600);
+    g.lineTo(840, 600);
+    g.lineTo(760, 520);
+    g.lineTo(480, 520);
+    g.stroke();
+    dot(480, 520);
+    dot(760, 520);
+
+    g.beginPath();
+    g.moveTo(940, 460);
+    g.lineTo(700, 460);
+    g.lineTo(620, 380);
+    g.lineTo(420, 380);
+    g.stroke();
+    dot(420, 380);
+
+    // Right traces
+    g.beginPath();
+    g.moveTo(3040, 680);
+    g.lineTo(3270, 680);
+    g.lineTo(3350, 760);
+    g.lineTo(3620, 760);
+    g.stroke();
+    dot(3620, 760);
+    dot(3350, 760);
+
+    g.beginPath();
+    g.moveTo(3140, 570);
+    g.lineTo(3360, 570);
+    g.lineTo(3440, 490);
+    g.lineTo(3700, 490);
+    g.stroke();
+    dot(3700, 490);
+
+    // 8. Left Vertical Column: 5 Stacked Orange-Outline Hexagons with Icons & Labels
+    const hx = 410;
+    const hexRadius = 126;
+    const hexY = [620, 990, 1360, 1730, 2100];
+
+    function drawHexOutline(cx, cy, r) {
+      g.strokeStyle = '#ff7a00';
+      g.lineWidth = 16;
+      g.lineJoin = 'round';
+      g.lineCap = 'round';
+      g.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * 60 - 30) * Math.PI * 180 / 180 / 180 * Math.PI; // angle in rad
+        const rad = (i * 60 - 30) * Math.PI / 180;
+        const px = cx + r * Math.cos(rad);
+        const py = cy + r * Math.sin(rad);
+        if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+      }
+      g.closePath();
+      g.stroke();
+    }
+
+    // Hexagon 1: 3D Modeling (Isometric wireframe cube)
+    drawHexOutline(hx, hexY[0], hexRadius);
+    {
+      const cy = hexY[0] - 22;
+      const s = 36;
+      g.strokeStyle = '#14284b';
+      g.lineWidth = 6;
+      // Top diamond
+      g.beginPath();
+      g.moveTo(hx, cy - s);
+      g.lineTo(hx + s * 0.86, cy - s * 0.5);
+      g.lineTo(hx, cy);
+      g.lineTo(hx - s * 0.86, cy - s * 0.5);
+      g.closePath();
+      g.stroke();
+      // Left face
+      g.beginPath();
+      g.moveTo(hx - s * 0.86, cy - s * 0.5);
+      g.lineTo(hx, cy);
+      g.lineTo(hx, cy + s);
+      g.lineTo(hx - s * 0.86, cy + s * 0.5);
+      g.closePath();
+      g.stroke();
+      // Right face
+      g.beginPath();
+      g.moveTo(hx + s * 0.86, cy - s * 0.5);
+      g.lineTo(hx, cy);
+      g.lineTo(hx, cy + s);
+      g.lineTo(hx + s * 0.86, cy + s * 0.5);
+      g.closePath();
+      g.stroke();
+      // Corner vertex dots
+      g.fillStyle = '#ff7a00';
+      [
+        [hx, cy - s], [hx + s * 0.86, cy - s * 0.5], [hx, cy],
+        [hx - s * 0.86, cy - s * 0.5], [hx - s * 0.86, cy + s * 0.5],
+        [hx, cy + s], [hx + s * 0.86, cy + s * 0.5]
+      ].forEach(([vx, vy]) => {
+        g.beginPath(); g.arc(vx, vy, 4.5, 0, Math.PI * 2); g.fill();
+      });
+
+      // Label below icon
+      g.fillStyle = '#14284b';
+      g.font = '900 34px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('3D Modeling', hx, hexY[0] + 66);
+    }
+
+    // Hexagon 2: Graphic Design (Monitor + Stylus Pen)
+    drawHexOutline(hx, hexY[1], hexRadius);
+    {
+      const cy = hexY[1] - 22;
+      g.strokeStyle = '#14284b';
+      g.lineWidth = 5;
+      // Monitor frame
+      g.strokeRect(hx - 38, cy - 32, 76, 50);
+      // Screen fill
+      g.fillStyle = 'rgba(20, 40, 75, 0.08)';
+      g.fillRect(hx - 36, cy - 30, 72, 46);
+      // Stand
+      g.beginPath();
+      g.moveTo(hx, cy + 18);
+      g.lineTo(hx, cy + 28);
+      g.moveTo(hx - 20, cy + 28);
+      g.lineTo(hx + 20, cy + 28);
+      g.stroke();
+
+      // Stylus pen angled across screen
+      g.strokeStyle = '#ff7a00';
+      g.lineWidth = 6;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(hx - 16, cy + 8);
+      g.lineTo(hx + 26, cy - 26);
+      g.stroke();
+      // Pen tip dot
+      g.fillStyle = '#ff7a00';
+      g.beginPath();
+      g.arc(hx - 16, cy + 8, 4, 0, Math.PI * 2);
+      g.fill();
+
+      // Label below icon
+      g.fillStyle = '#14284b';
+      g.font = '900 34px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('Graphic Design', hx, hexY[1] + 66);
+    }
+
+    // Hexagon 3: Photo & Illustration (Generic Ps and Ai badges)
+    drawHexOutline(hx, hexY[2], hexRadius);
+    {
+      const cy = hexY[2] - 22;
+      // Blue "Ps" square badge
+      g.fillStyle = '#001e36';
+      g.beginPath();
+      g.roundRect(hx - 48, cy - 24, 42, 42, 6);
+      g.fill();
+      g.fillStyle = '#31a8ff';
+      g.font = '900 24px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('Ps', hx - 27, cy - 2);
+
+      // Dark "Ai" square badge
+      g.fillStyle = '#261300';
+      g.beginPath();
+      g.roundRect(hx + 6, cy - 24, 42, 42, 6);
+      g.fill();
+      g.fillStyle = '#ff7a00';
+      g.font = '900 24px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('Ai', hx + 27, cy - 2);
+
+      // Label on 2 lines
+      g.fillStyle = '#14284b';
+      g.font = '900 30px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('Photo &', hx, hexY[2] + 52);
+      g.fillText('Illustration', hx, hexY[2] + 84);
+    }
+
+    // Hexagon 4: Product Design (3D isometric product box)
+    drawHexOutline(hx, hexY[3], hexRadius);
+    {
+      const cy = hexY[3] - 22;
+      const s = 34;
+      g.strokeStyle = '#14284b';
+      g.lineWidth = 6;
+      // Top diamond
+      g.fillStyle = '#ff7a00';
+      g.beginPath();
+      g.moveTo(hx, cy - s);
+      g.lineTo(hx + s * 0.86, cy - s * 0.5);
+      g.lineTo(hx, cy);
+      g.lineTo(hx - s * 0.86, cy - s * 0.5);
+      g.closePath();
+      g.fill();
+      g.stroke();
+      // Left face
+      g.fillStyle = 'rgba(20, 40, 75, 0.12)';
+      g.beginPath();
+      g.moveTo(hx - s * 0.86, cy - s * 0.5);
+      g.lineTo(hx, cy);
+      g.lineTo(hx, cy + s);
+      g.lineTo(hx - s * 0.86, cy + s * 0.5);
+      g.closePath();
+      g.fill();
+      g.stroke();
+      // Right face
+      g.fillStyle = 'rgba(20, 40, 75, 0.22)';
+      g.beginPath();
+      g.moveTo(hx + s * 0.86, cy - s * 0.5);
+      g.lineTo(hx, cy);
+      g.lineTo(hx, cy + s);
+      g.lineTo(hx + s * 0.86, cy + s * 0.5);
+      g.closePath();
+      g.fill();
+      g.stroke();
+
+      // Label below icon
+      g.fillStyle = '#14284b';
+      g.font = '900 34px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('Product Design', hx, hexY[3] + 66);
+    }
+
+    // Hexagon 5: AR / VR Design (3D cube inside bracketed viewfinder)
+    drawHexOutline(hx, hexY[4], hexRadius);
+    {
+      const cy = hexY[4] - 22;
+      // Bracketed viewfinder corners [ ]
+      g.strokeStyle = '#ff7a00';
+      g.lineWidth = 5;
+      const bW = 38, bH = 34;
+      // Top-left
+      g.beginPath(); g.moveTo(hx - bW, cy - bH + 12); g.lineTo(hx - bW, cy - bH); g.lineTo(hx - bW + 12, cy - bH); g.stroke();
+      // Top-right
+      g.beginPath(); g.moveTo(hx + bW - 12, cy - bH); g.lineTo(hx + bW, cy - bH); g.lineTo(hx + bW, cy - bH + 12); g.stroke();
+      // Bottom-left
+      g.beginPath(); g.moveTo(hx - bW, cy + bH - 12); g.lineTo(hx - bW, cy + bH); g.lineTo(hx - bW + 12, cy + bH); g.stroke();
+      // Bottom-right
+      g.beginPath(); g.moveTo(hx + bW - 12, cy + bH); g.lineTo(hx + bW, cy + bH); g.lineTo(hx + bW, cy + bH - 12); g.stroke();
+
+      // 3D cube inside
+      const s = 20;
+      g.strokeStyle = '#14284b';
+      g.lineWidth = 5;
+      g.beginPath();
+      g.moveTo(hx, cy - s); g.lineTo(hx + s * 0.86, cy - s * 0.5); g.lineTo(hx, cy); g.lineTo(hx - s * 0.86, cy - s * 0.5); g.closePath();
+      g.moveTo(hx - s * 0.86, cy - s * 0.5); g.lineTo(hx, cy); g.lineTo(hx, cy + s); g.lineTo(hx - s * 0.86, cy + s * 0.5); g.closePath();
+      g.moveTo(hx + s * 0.86, cy - s * 0.5); g.lineTo(hx, cy); g.lineTo(hx, cy + s); g.lineTo(hx + s * 0.86, cy + s * 0.5); g.closePath();
+      g.stroke();
+
+      // Label below icon
+      g.fillStyle = '#14284b';
+      g.font = '900 34px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('AR / VR Design', hx, hexY[4] + 66);
+    }
   });
 
+  // Material: Matte paint look (roughness: 0.85, metalness: 0)
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    roughness: 0.85,
+    metalness: 0,
+  });
+  tex.anisotropy = 4;
+
+  // Mesh: full wall height (y=0.12 to 5.88, h=5.76m, w=8.5m)
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(8.0, 2.7),
-    new THREE.MeshBasicMaterial({ map: tex })
+    new THREE.PlaneGeometry(8.5, 5.76),
+    mat
   );
-  mesh.position.set(0, 4.4, -14.73);
+  mesh.position.set(0.0, 3.0, -14.78);
   scene.add(mesh);
 }
+
+/** Backward compatibility alias for main mural */
+export const createMainWallMural = createDesigningZoneMural;
 
 /* ═══════════════════════════════════════════════════════════════════
    5. ROBOTICS LAB MURAL  — Right wall, x = 19.78

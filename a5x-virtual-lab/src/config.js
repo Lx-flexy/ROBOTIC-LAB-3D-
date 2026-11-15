@@ -39,8 +39,8 @@ export const ZONES = [
   },
   {
     id: 'design',
-    title: 'Design Zone',
-    desc: 'CAD workstations with dual monitors for 3D modelling before printing or assembly.',
+    title: 'Designing Zone',
+    desc: '3D Modeling, Graphic Design, Photo & Illustration, Product Design & AR/VR workstations with Blender and Adobe tools.',
     stand: [0, -9.5],
     yaw: 0,
     center: [0, -12],

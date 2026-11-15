@@ -4,10 +4,10 @@
 import * as THREE from 'three';
 import { box, cyl, put } from '../../utils/geometry.js';
 import { M, Bm, C, codeScreenTex, cadScreenTex, canvasTex } from '../../utils/materials.js';
-import { createTable, createChair, createMonitor, createSign, createRack, createPlant } from '../props/furniture.js';
+import { createTable, createChair, createMonitor, createSign, createRack, createPlant, createWindow } from '../props/furniture.js';
 import { createPrinter, createDrone, createCar, createRobot, createBook, createMug } from '../props/equipment.js';
 import { BRAND_SHORT } from '../../config.js';
-import { create3DPrintingMural, createCodingZoneMural, createMainWallMural } from '../props/wallmurals.js';
+import { create3DPrintingMural, createCodingZoneMural, createDesigningZoneMural, createMainWallMural } from '../props/wallmurals.js';
 
 /* ═══════════════════════════════════════════════════════════════════
    3D PRINTING ZONE PROPS (Reference-matched)
@@ -765,8 +765,8 @@ function createIdeScreenTexture(fileName, lang = 'python') {
   });
 }
 
-/** Complete Realistic Workstation (Large Monitor + Stand + Keyboard + Mouse + Desk Pad) */
-function createCodingWorkstation(parent, x, z, fileName, lang) {
+/** Complete Workstation (Large Monitor + Stand + Keyboard + Mouse + Desk Pad) */
+function createWorkstationWithScreen(parent, x, z, screenTex) {
   const g = new THREE.Group();
   g.position.set(x, 0.82, z);
 
@@ -791,13 +791,13 @@ function createCodingWorkstation(parent, x, z, fileName, lang) {
   const frameZ = -0.14;
   box(g, 1.10, 0.65, 0.035, blackMat, 0, frameY, frameZ);
 
-  // 4. Glowing Dark IDE Screen
-  const ideTex = createIdeScreenTexture(fileName, lang);
-  ideTex.anisotropy = 4;
+  // 4. Glowing Screen
+  const tex = typeof screenTex === 'function' ? screenTex() : screenTex;
+  tex.anisotropy = 4;
   const screenMat = new THREE.MeshStandardMaterial({
-    map: ideTex,
+    map: tex,
     emissive: 0xffffff,
-    emissiveMap: ideTex,
+    emissiveMap: tex,
     emissiveIntensity: 0.62,
     roughness: 0.25,
     metalness: 0.05
@@ -840,7 +840,6 @@ function createCodingWorkstation(parent, x, z, fileName, lang) {
   // 6. Ergonomic Optical Mouse
   const mouseGroup = new THREE.Group();
   mouseGroup.position.set(0.26, 0.016, 0.16);
-  // Mouse body (curved capsule/box)
   const mouseBody = new THREE.Mesh(
     new THREE.BoxGeometry(0.075, 0.030, 0.115),
     M(0x16161a, { roughness: 0.35 })
@@ -849,6 +848,620 @@ function createCodingWorkstation(parent, x, z, fileName, lang) {
   // Scroll wheel
   cyl(mouseGroup, 0.006, 0.006, 0.018, M(0xff7a00), 0, 0.016, -0.02, 8);
   g.add(mouseGroup);
+
+  parent.add(g);
+  return g;
+}
+
+/** Complete Realistic Workstation (Large Monitor + Stand + Keyboard + Mouse + Desk Pad) */
+function createCodingWorkstation(parent, x, z, fileName, lang) {
+  return createWorkstationWithScreen(parent, x, z, createIdeScreenTexture(fileName, lang));
+}
+
+/** 3D Modeling Screen Texture (Blender-style dark grid with wireframe drone) */
+function create3DModelingScreenTexture() {
+  return canvasTex(1024, 640, (g, w, h) => {
+    // 1. Dark 3D Viewport background
+    g.fillStyle = '#16181f';
+    g.fillRect(0, 0, w, h);
+
+    // 2. Perspective 3D Grid lines
+    g.strokeStyle = '#252936';
+    g.lineWidth = 1;
+    const originX = 490, originY = 380;
+    for (let x = 60; x <= 800; x += 36) {
+      g.beginPath();
+      g.moveTo(x, 180);
+      g.lineTo(originX + (x - originX) * 1.8, 560);
+      g.stroke();
+    }
+    for (let y = 200; y <= 560; y += 32) {
+      const span = 200 + (y - 180) * 1.2;
+      g.beginPath();
+      g.moveTo(originX - span, y);
+      g.lineTo(originX + span, y);
+      g.stroke();
+    }
+
+    // Coordinate Axes (Red X, Green Y)
+    g.strokeStyle = '#e53935';
+    g.lineWidth = 2.5;
+    g.beginPath();
+    g.moveTo(originX - 220, originY);
+    g.lineTo(originX + 220, originY);
+    g.stroke();
+
+    g.strokeStyle = '#43a047';
+    g.beginPath();
+    g.moveTo(originX, originY - 180);
+    g.lineTo(originX, originY + 180);
+    g.stroke();
+
+    // 3. Detailed 3D Wireframe Drone model
+    const dx = originX, dy = originY - 45;
+    g.strokeStyle = '#cfd8dc';
+    g.lineWidth = 2.5;
+
+    // Center body (aerodynamic pod)
+    g.beginPath();
+    g.moveTo(dx - 55, dy - 20);
+    g.lineTo(dx + 55, dy - 20);
+    g.lineTo(dx + 75, dy + 15);
+    g.lineTo(dx + 35, dy + 45);
+    g.lineTo(dx - 35, dy + 45);
+    g.lineTo(dx - 75, dy + 15);
+    g.closePath();
+    g.stroke();
+
+    // Body triangulation wireframe
+    g.beginPath();
+    g.moveTo(dx - 55, dy - 20); g.lineTo(dx, dy + 10); g.lineTo(dx + 55, dy - 20);
+    g.moveTo(dx - 75, dy + 15); g.lineTo(dx, dy + 10); g.lineTo(dx + 75, dy + 15);
+    g.moveTo(dx - 35, dy + 45); g.lineTo(dx, dy + 10); g.lineTo(dx + 35, dy + 45);
+    g.stroke();
+
+    // 4 Diagonal Motor Arms with Motor Pods & Rotor Circles
+    const arms = [
+      { ax: -140, ay: -80 },
+      { ax: 140,  ay: -80 },
+      { ax: -160, ay: 65 },
+      { ax: 160,  ay: 65 }
+    ];
+    arms.forEach((arm) => {
+      // Carbon arm tube
+      g.strokeStyle = '#90a4ae';
+      g.lineWidth = 3.5;
+      g.beginPath();
+      g.moveTo(dx + (arm.ax > 0 ? 40 : -40), dy + (arm.ay > 0 ? 25 : -10));
+      g.lineTo(dx + arm.ax, dy + arm.ay);
+      g.stroke();
+
+      // Motor pod
+      g.fillStyle = '#37474f';
+      g.beginPath();
+      g.arc(dx + arm.ax, dy + arm.ay, 12, 0, Math.PI * 2);
+      g.fill();
+      g.stroke();
+
+      // Spinning rotor blade circle outline
+      g.strokeStyle = '#607d8b';
+      g.lineWidth = 1.5;
+      g.beginPath();
+      g.ellipse(dx + arm.ax, dy + arm.ay, 52, 22, (arm.ax > 0 ? 0.35 : -0.35), 0, Math.PI * 2);
+      g.stroke();
+    });
+
+    // Camera gimbal beneath
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 2;
+    g.beginPath();
+    g.arc(dx, dy + 42, 16, 0, Math.PI * 2);
+    g.stroke();
+
+    // Vertex dots (orange and cyan)
+    g.fillStyle = '#ff7a00';
+    [
+      [dx - 55, dy - 20], [dx + 55, dy - 20], [dx, dy + 10],
+      [dx - 35, dy + 45], [dx + 35, dy + 45]
+    ].forEach(([vx, vy]) => {
+      g.beginPath(); g.arc(vx, vy, 4, 0, Math.PI * 2); g.fill();
+    });
+
+    g.fillStyle = '#00e5ff';
+    arms.forEach((arm) => {
+      g.beginPath(); g.arc(dx + arm.ax, dy + arm.ay, 4, 0, Math.PI * 2); g.fill();
+    });
+
+    // 4. Header Bar (Blender workspace tabs)
+    g.fillStyle = '#20222a';
+    g.fillRect(0, 0, w, 36);
+
+    const tabs = ['Layout', 'Modeling', 'Sculpting', 'UV Editing', 'Shading', 'Animation', 'Render'];
+    let tabX = 20;
+    tabs.forEach((tab) => {
+      if (tab === 'Modeling') {
+        g.fillStyle = '#323747';
+        g.fillRect(tabX - 8, 0, 85, 36);
+        g.fillStyle = '#ff7a00';
+        g.fillRect(tabX - 8, 33, 85, 3);
+        g.fillStyle = '#ffffff';
+      } else {
+        g.fillStyle = '#9aa0b4';
+      }
+      g.font = "bold 13px 'Segoe UI', sans-serif";
+      g.fillText(tab, tabX, 22);
+      tabX += tab === 'Modeling' ? 95 : 85;
+    });
+
+    // 5. Left Toolbar
+    g.fillStyle = '#1b1d24';
+    g.fillRect(0, 36, 46, h - 36);
+    g.strokeStyle = '#858b9e';
+    g.lineWidth = 2;
+    g.strokeRect(14, 52, 18, 18);
+    g.beginPath(); g.arc(23, 96, 8, 0, Math.PI * 2); g.moveTo(23, 84); g.lineTo(23, 108); g.moveTo(11, 96); g.lineTo(35, 96); g.stroke();
+    g.beginPath(); g.moveTo(23, 126); g.lineTo(23, 146); g.moveTo(13, 136); g.lineTo(33, 136); g.stroke();
+    g.strokeRect(14, 168, 18, 14);
+
+    // 6. Right Outliner & Properties Panel
+    g.fillStyle = '#1e2028';
+    g.fillRect(w - 210, 36, 210, h - 36);
+    g.fillStyle = '#a0a6b8';
+    g.font = "bold 13px 'Segoe UI', sans-serif";
+    g.fillText('Scene Collection', w - 195, 58);
+
+    g.font = "12px 'Segoe UI', sans-serif";
+    const hierarchy = [
+      'v Collection',
+      '    > Drone_Body_v2 (Mesh)',
+      '    > Rotor_Front_Left',
+      '    > Rotor_Front_Right',
+      '    > Rotor_Rear_Left',
+      '    > Rotor_Rear_Right',
+      '    > Gimbal_Camera',
+      '    > Studio_KeyLight'
+    ];
+    hierarchy.forEach((item, i) => {
+      if (item.includes('Drone_Body')) {
+        g.fillStyle = '#34394d';
+        g.fillRect(w - 210, 72 + i * 22, 210, 20);
+        g.fillStyle = '#ffffff';
+      } else {
+        g.fillStyle = '#8e94a6';
+      }
+      g.fillText(item, w - 195, 87 + i * 22);
+    });
+
+    // Transform properties subpanel
+    g.fillStyle = '#262933';
+    g.fillRect(w - 200, 275, 190, 180);
+    g.fillStyle = '#ff7a00';
+    g.font = "bold 12px 'Segoe UI', sans-serif";
+    g.fillText('Transform', w - 190, 295);
+    g.fillStyle = '#a0a6b8';
+    g.font = "11px 'Segoe UI', monospace";
+    g.fillText('Loc X: 0.000m', w - 190, 320);
+    g.fillText('Loc Y: 0.000m', w - 190, 338);
+    g.fillText('Loc Z: 0.650m', w - 190, 356);
+    g.fillText('Rot X: 0.0°', w - 190, 380);
+    g.fillText('Rot Y: 0.0°', w - 190, 398);
+    g.fillText('Rot Z: 15.0°', w - 190, 416);
+    g.fillText('Scale: 1.000', w - 190, 438);
+
+    // 7. Bottom Status Bar
+    g.fillStyle = '#17191f';
+    g.fillRect(0, h - 24, w, 24);
+    g.fillStyle = '#7a8196';
+    g.font = "12px 'Segoe UI', sans-serif";
+    g.fillText('Verts: 14,820  |  Faces: 12,450  |  Tris: 24,900  |  SRI 3D Studio v4.2', 14, h - 8);
+    g.textAlign = 'right';
+    g.fillText('Object Mode  |  3D Viewport  |  Units: Metric  ', w - 10, h - 8);
+  });
+}
+
+/** Graphic Design App Screen Texture (Photoshop/Illustrator style with SRI Drone Poster) */
+function createGraphicDesignScreenTexture() {
+  return canvasTex(1024, 640, (g, w, h) => {
+    // 1. Dark workspace background
+    g.fillStyle = '#23252d';
+    g.fillRect(0, 0, w, h);
+
+    // 2. Top Menu Bar
+    g.fillStyle = '#1c1e24';
+    g.fillRect(0, 0, w, 34);
+    g.fillStyle = '#9aa0b4';
+    g.font = "12px 'Segoe UI', sans-serif";
+    g.fillText('File   Edit   Object   Type   Select   Effect   View   Window   Help', 18, 22);
+
+    // 3. Central Poster Artwork Canvas (width 480, height 530)
+    const cw = 480, ch = 530;
+    const cx = 100, cy = 56;
+
+    // Canvas drop shadow
+    g.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    g.fillRect(cx + 8, cy + 8, cw, ch);
+
+    // White/Cream Poster Base
+    g.fillStyle = '#fff9f2';
+    g.fillRect(cx, cy, cw, ch);
+
+    // Poster Graphic Layout:
+    // Navy & Orange diagonal background shapes
+    g.fillStyle = '#14284b';
+    g.beginPath();
+    g.moveTo(cx, cy);
+    g.lineTo(cx + cw, cy);
+    g.lineTo(cx + cw, cy + ch * 0.42);
+    g.lineTo(cx, cy + ch * 0.28);
+    g.closePath();
+    g.fill();
+
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.moveTo(cx + cw, cy + ch * 0.35);
+    g.lineTo(cx + cw, cy + ch * 0.48);
+    g.lineTo(cx, cy + ch * 0.34);
+    g.lineTo(cx, cy + ch * 0.28);
+    g.closePath();
+    g.fill();
+
+    // SRI Logo at top left of poster
+    g.fillStyle = '#ff7a00';
+    for (let i = 0; i < 9; i++) {
+      const a = Math.PI + (i / 8) * Math.PI;
+      const lx = cx + 70 + Math.cos(a) * 20;
+      const ly = cy + 45 + Math.sin(a) * 14;
+      g.beginPath(); g.arc(lx, ly, 3.5, 0, Math.PI * 2); g.fill();
+    }
+    g.fillStyle = '#ffffff';
+    g.font = "900 24px Georgia, serif";
+    g.textAlign = 'center';
+    g.fillText('SRI', cx + 70, cy + 68);
+    g.strokeStyle = '#ff7a00'; g.lineWidth = 2.5;
+    g.beginPath(); g.moveTo(cx + 45, cy + 76); g.quadraticCurveTo(cx + 70, cy + 82, cx + 95, cy + 74); g.stroke();
+
+    // Central Blue & Orange Drone Vector Illustration on poster
+    const dX = cx + cw / 2, dY = cy + ch * 0.52;
+    // Glow behind drone
+    const radGlow = g.createRadialGradient(dX, dY, 10, dX, dY, 140);
+    radGlow.addColorStop(0, 'rgba(255, 122, 0, 0.2)');
+    radGlow.addColorStop(1, 'rgba(255, 249, 242, 0)');
+    g.fillStyle = radGlow;
+    g.beginPath(); g.arc(dX, dY, 140, 0, Math.PI * 2); g.fill();
+
+    // Drone Body
+    g.fillStyle = '#14284b';
+    g.beginPath();
+    g.roundRect(dX - 60, dY - 20, 120, 40, 12);
+    g.fill();
+    // Drone Orange stripe
+    g.fillStyle = '#ff7a00';
+    g.fillRect(dX - 50, dY - 4, 100, 8);
+
+    // 4 Diagonal Arms
+    g.strokeStyle = '#14284b';
+    g.lineWidth = 8;
+    [[-85, -55], [85, -55], [-95, 45], [95, 45]].forEach(([ax, ay]) => {
+      g.beginPath();
+      g.moveTo(dX + (ax > 0 ? 30 : -30), dY);
+      g.lineTo(dX + ax, dY + ay);
+      g.stroke();
+
+      // Motor pod
+      g.fillStyle = '#ff7a00';
+      g.beginPath(); g.arc(dX + ax, dY + ay, 10, 0, Math.PI * 2); g.fill();
+
+      // Propeller blades
+      g.strokeStyle = '#007acc';
+      g.lineWidth = 3;
+      g.beginPath();
+      g.ellipse(dX + ax, dY + ay, 38, 12, ax > 0 ? 0.3 : -0.3, 0, Math.PI * 2);
+      g.stroke();
+    });
+
+    // Poster Title text below drone
+    g.fillStyle = '#14284b';
+    g.font = "900 24px 'Segoe UI', Arial, sans-serif";
+    g.textAlign = 'center';
+    g.fillText('NEXT-GEN ROBOTICS', dX, cy + ch * 0.78);
+    g.fillStyle = '#ff7a00';
+    g.font = "bold 15px 'Segoe UI', sans-serif";
+    g.fillText('DESIGN • PROTOTYPE • INNOVATE', dX, cy + ch * 0.84);
+
+    // 4. Left Vertical Tool Palette
+    g.fillStyle = '#1a1c22';
+    g.fillRect(0, 34, 48, h - 34);
+    g.strokeStyle = '#858b9e';
+    g.lineWidth = 2;
+    // Active Pen tool icon (orange highlight)
+    g.fillStyle = '#ff7a00';
+    g.beginPath(); g.roundRect(8, 48, 32, 32, 6); g.fill();
+    g.strokeStyle = '#ffffff';
+    g.beginPath(); g.moveTo(24, 54); g.lineTo(32, 70); g.lineTo(26, 70); g.lineTo(24, 74); g.lineTo(22, 70); g.lineTo(16, 70); g.closePath(); g.stroke();
+    // Selection tools
+    g.strokeStyle = '#858b9e';
+    g.strokeRect(14, 94, 20, 20);
+    g.strokeRect(14, 130, 20, 16);
+
+    // 5. Right Docking Panels (Color & Layers)
+    g.fillStyle = '#1e2028';
+    g.fillRect(w - 220, 34, 220, h - 34);
+
+    // Color panel header
+    g.fillStyle = '#a0a6b8';
+    g.font = "bold 13px 'Segoe UI', sans-serif";
+    g.textAlign = 'left';
+    g.fillText('Color Spectrum', w - 205, 56);
+
+    // Spectrum swatch bar
+    const grad = g.createLinearGradient(w - 205, 0, w - 25, 0);
+    grad.addColorStop(0, '#ff0000');
+    grad.addColorStop(0.2, '#ffff00');
+    grad.addColorStop(0.4, '#00ff00');
+    grad.addColorStop(0.6, '#00ffff');
+    grad.addColorStop(0.8, '#0000ff');
+    grad.addColorStop(1, '#ff00ff');
+    g.fillStyle = grad;
+    g.fillRect(w - 205, 68, 180, 20);
+
+    // Layers panel
+    g.fillStyle = '#a0a6b8';
+    g.font = "bold 13px 'Segoe UI', sans-serif";
+    g.fillText('Layers', w - 205, 125);
+
+    const layers = [
+      '  [👁] Layer 4: Drone_Aero',
+      '  [👁] Layer 3: Tech_Vectors',
+      '  [👁] Layer 2: SRI_Lotus_Logo',
+      '  [👁] Layer 1: Navy_Shapes',
+      '  [🔒] Background'
+    ];
+    layers.forEach((l, i) => {
+      if (i === 0) {
+        g.fillStyle = '#2f3547';
+        g.fillRect(w - 220, 138 + i * 26, 220, 24);
+        g.fillStyle = '#ffffff';
+      } else {
+        g.fillStyle = '#8e94a6';
+      }
+      g.font = "12px 'Segoe UI', sans-serif";
+      g.fillText(l, w - 205, 155 + i * 26);
+    });
+
+    // 6. Bottom Status Bar
+    g.fillStyle = '#17191f';
+    g.fillRect(0, h - 24, w, 24);
+    g.fillStyle = '#7a8196';
+    g.font = "12px 'Segoe UI', sans-serif";
+    g.fillText('Doc: 4000px × 3000px (300 ppi)  |  100%  |  SRI_Drone_Poster.ai', 14, h - 8);
+    g.textAlign = 'right';
+    g.fillText('CMYK/8  |  GPU Accelerated  ', w - 10, h - 8);
+  });
+}
+
+/** 3 Stacked Books ("Adobe Illustrator", "Adobe Photoshop", "Blender 3D") */
+function createDesignStackedBooks(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const books = [
+    { title: 'Adobe Illustrator', col: '#14284b', band: '#ff7a00', w: 0.36, h: 0.055, d: 0.24, dy: 0.028 },
+    { title: 'Adobe Photoshop',   col: '#182b52', band: '#31a8ff', w: 0.33, h: 0.055, d: 0.23, dy: 0.083 },
+    { title: 'Blender 3D',        col: '#1b3260', band: '#f59e0b', w: 0.30, h: 0.055, d: 0.21, dy: 0.138 }
+  ];
+
+  books.forEach((b) => {
+    const bookGroup = new THREE.Group();
+    bookGroup.position.set(0, b.dy, 0);
+
+    box(bookGroup, b.w, b.h, b.d, M(b.col, { roughness: 0.5 }), 0, 0, 0);
+    box(bookGroup, b.w - 0.02, b.h - 0.012, 0.015, M(0xf5f5f5, { roughness: 0.9 }), 0, 0, -b.d / 2 + 0.008);
+
+    const spineTex = canvasTex(512, 128, (sg) => {
+      sg.fillStyle = b.col;
+      sg.fillRect(0, 0, 512, 128);
+      sg.fillStyle = b.band;
+      sg.fillRect(20, 10, 8, 108);
+      sg.fillRect(484, 10, 8, 108);
+      sg.fillStyle = '#ffffff';
+      sg.font = "900 42px 'Segoe UI', Arial, sans-serif";
+      sg.textAlign = 'center';
+      sg.textBaseline = 'middle';
+      sg.fillText(b.title, 256, 64);
+    });
+    spineTex.anisotropy = 4;
+    const spineMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(b.w, b.h),
+      new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.45 })
+    );
+    spineMesh.position.set(0, 0, b.d / 2 + 0.001);
+    bookGroup.add(spineMesh);
+
+    g.add(bookGroup);
+  });
+
+  parent.add(g);
+  return g;
+}
+
+/** White Ceramic Mug with authentic SRI Lotus Logo */
+function createDesignWhiteMug(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const ceramicMat = M(0xffffff, { roughness: 0.15, metalness: 0.05 });
+  cyl(g, 0.052, 0.048, 0.11, ceramicMat, 0, 0.055, 0, 16);
+  cyl(g, 0.046, 0.046, 0.01, M(0x2d1810, { roughness: 0.3 }), 0, 0.10, 0, 14);
+
+  const handle = new THREE.Mesh(
+    new THREE.TorusGeometry(0.038, 0.010, 8, 16, Math.PI),
+    ceramicMat
+  );
+  handle.position.set(0.062, 0.055, 0);
+  handle.rotation.y = Math.PI / 2;
+  g.add(handle);
+
+  const logoTex = canvasTex(128, 64, (lg) => {
+    lg.fillStyle = '#ffffff';
+    lg.fillRect(0, 0, 128, 64);
+    // Leaf fan
+    lg.fillStyle = '#ff7a00';
+    for (let i = 0; i < 9; i++) {
+      const a = Math.PI + (i / 8) * Math.PI;
+      const lx = 64 + Math.cos(a) * 20;
+      const ly = 24 + Math.sin(a) * 12;
+      lg.beginPath(); lg.arc(lx, ly, 3.5, 0, Math.PI * 2); lg.fill();
+    }
+    // SRI text
+    lg.fillStyle = '#14284b';
+    lg.font = "900 22px Georgia, serif";
+    lg.textAlign = 'center';
+    lg.textBaseline = 'top';
+    lg.fillText('SRI', 64, 25);
+    // Swoosh
+    lg.strokeStyle = '#ff7a00';
+    lg.lineWidth = 2.5;
+    lg.beginPath();
+    lg.moveTo(42, 50);
+    lg.quadraticCurveTo(64, 56, 86, 48);
+    lg.stroke();
+  });
+  const logoMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.055, 0.028),
+    new THREE.MeshStandardMaterial({ map: logoTex, roughness: 0.2 })
+  );
+  logoMesh.position.set(0, 0.058, 0.053);
+  g.add(logoMesh);
+
+  parent.add(g);
+  return g;
+}
+
+/** Floating black shelf with warm LED strip underneath + props */
+function createDesignFloatingShelfWithProps(parent, x, y, z, anim) {
+  const g = new THREE.Group();
+
+  const shelfMat = M(0x161618, { roughness: 0.45, metalness: 0.2 });
+  box(g, 3.8, 0.05, 0.30, shelfMat, x, y, z);
+
+  const ledMat = M(0xffe082, {
+    emissive: 0xffe082,
+    emissiveIntensity: 2.2,
+    roughness: 0.2
+  });
+  box(g, 3.6, 0.012, 0.035, ledMat, x, y - 0.028, z + 0.04);
+
+  const shelfLight = new THREE.PointLight(0xffb74d, 2.0, 3.2, 2.0);
+  shelfLight.position.set(x, y - 0.06, z + 0.12);
+  g.add(shelfLight);
+
+  const topY = y + 0.025;
+
+  // 3 Stacked Books ("Adobe Illustrator", "Adobe Photoshop", "Blender 3D")
+  createDesignStackedBooks(g, x - 1.45, topY, z);
+
+  // RC Robot Car
+  createRcRobotCar(g, x - 0.45, topY, z);
+
+  // White Ceramic Mug with authentic SRI logo
+  createDesignWhiteMug(g, x + 0.45, topY, z);
+
+  // Cute Waving Robot Mascot
+  const wavingBot = createWavingMascot(g, x + 1.25, topY, z);
+  if (anim) {
+    anim.head = wavingBot.getObjectByName('codingZoneMascotHead');
+  }
+
+  parent.add(g);
+  return g;
+}
+
+/** Designing Zone Industrial Rack with Cabinet, 2 Pen-Nib Boxes, Clear Box, Drone */
+function createDesigningZoneRack(parent, x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+
+  const blackSteelMat = M(0x1a1a1e, { roughness: 0.4, metalness: 0.6 });
+  const woodMat = M(C.wood, { roughness: 0.6 });
+  const silverMat = M(0xd1d5db, { roughness: 0.25, metalness: 0.8 });
+
+  const rW = 1.22, rD = 0.54, cabH = 0.74;
+
+  // 1. Base 2-Door Black Cabinet
+  box(g, rW, cabH, rD, blackSteelMat, 0, cabH / 2, 0);
+  box(g, rW + 0.02, 0.035, rD + 0.02, woodMat, 0, cabH + 0.0175, 0);
+  box(g, 0.008, cabH - 0.08, 0.005, M(0x0a0a0d), 0, cabH / 2, rD / 2 + 0.002);
+  [-0.04, 0.04].forEach(hx => {
+    cyl(g, 0.007, 0.007, 0.14, silverMat, hx, cabH * 0.65, rD / 2 + 0.025, 8);
+  });
+
+  // 2. Black Steel Corner Uprights
+  const postH = 1.62;
+  const postY = cabH + postH / 2;
+  const px = rW / 2 - 0.025, pz = rD / 2 - 0.025;
+  [[-px, -pz], [px, -pz], [-px, pz], [px, pz]].forEach(([a, b]) => {
+    box(g, 0.035, postH, 0.035, blackSteelMat, a, postY, b);
+  });
+
+  // 3. Wooden Shelves
+  const shelfHeights = [1.25, 1.70, 2.15];
+  shelfHeights.forEach(sy => {
+    box(g, rW - 0.02, 0.030, rD - 0.02, woodMat, 0, sy, 0);
+  });
+
+  // 4. Shelf 1 (y = 1.25): Two black boxes with white pen-nib icon
+  [-0.24, 0.24].forEach((bx) => {
+    const boxGroup = new THREE.Group();
+    boxGroup.position.set(bx, 1.25 + 0.11, 0);
+    box(boxGroup, 0.28, 0.20, 0.32, M(0x18181c, { roughness: 0.5 }), 0, 0, 0);
+
+    const markTex = canvasTex(128, 128, (mg) => {
+      mg.fillStyle = '#18181c';
+      mg.fillRect(0, 0, 128, 128);
+      // White fountain pen drafting nib
+      mg.fillStyle = '#ffffff';
+      mg.beginPath();
+      mg.moveTo(42, 34);
+      mg.lineTo(86, 34);
+      mg.lineTo(76, 68);
+      mg.lineTo(65, 98);
+      mg.lineTo(63, 98);
+      mg.lineTo(52, 68);
+      mg.closePath();
+      mg.fill();
+      mg.fillStyle = '#18181c';
+      mg.beginPath(); mg.arc(64, 62, 5, 0, Math.PI * 2); mg.fill();
+      mg.strokeStyle = '#18181c'; mg.lineWidth = 3;
+      mg.beginPath(); mg.moveTo(64, 67); mg.lineTo(64, 98); mg.stroke();
+    });
+    const markMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.18, 0.14),
+      new THREE.MeshStandardMaterial({ map: markTex, roughness: 0.4 })
+    );
+    markMesh.position.set(0, 0, 0.161);
+    boxGroup.add(markMesh);
+    g.add(boxGroup);
+  });
+
+  // 5. Shelf 2 (y = 1.70): Transparent acrylic storage box with visible electronics
+  const clearMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.45,
+    roughness: 0.12,
+    transmission: 0.75,
+    ior: 1.45
+  });
+  box(g, 0.52, 0.18, 0.34, clearMat, 0, 1.70 + 0.10, 0);
+  [-0.18, 0.18].forEach(lx => {
+    box(g, 0.018, 0.05, 0.015, M(0xff7a00), lx, 1.70 + 0.17, 0.172);
+  });
+  box(g, 0.20, 0.015, 0.14, M(0x15803d), -0.08, 1.70 + 0.04, 0);
+  box(g, 0.12, 0.035, 0.08, M(0xff7a00), 0.12, 1.70 + 0.04, 0);
+  cyl(g, 0.02, 0.02, 0.08, M(0x2563eb), 0, 1.70 + 0.04, -0.06, 8);
+
+  // 6. Shelf 3 (y = 2.15): Quadcopter Drone sitting safely ON top wooden shelf
+  createDrone(g, 0, 2.165, 0);
 
   parent.add(g);
   return g;
@@ -1229,28 +1842,48 @@ export function buildBackWall(scene) {
   // Full-sized floor plant near corner
   createFloorPlant(scene, -15.5, 0.0, -13.8);
 
-  // ━━━━━━━ DESIGN ZONE (x ≈ 0) ━━━━━━━
-  bay(0, 'DESIGN ZONE');
+  // ━━━━━━━ DESIGNING ZONE (x ≈ 0.0, reference-matched overhaul) ━━━━━━━
+  // Workbench Table (5.4m wide, 1.25m deep, 0.82m tall, blonde wood top + black metal legs)
+  createTable(scene, 5.4, 1.25, 0.0, -14.15, 0.82);
 
-  // Dual monitors with CAD screens
-  createMonitor(scene, -1, 1.3, -14.2, cadScreenTex);
-  createMonitor(scene, 1, 1.3, -14.2, cadScreenTex);
-  createChair(scene, -1, -12.6);
-  createChair(scene, 1, -12.6);
+  // Soft grounding contact shadows under table legs
+  [
+    [-2.58, -14.15 - 0.505],
+    [2.58, -14.15 - 0.505],
+    [-2.58, -14.15 + 0.505],
+    [2.58, -14.15 + 0.505]
+  ].forEach(([cx, cz]) => {
+    const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.24), legContactMat);
+    pad.rotation.x = -Math.PI / 2;
+    pad.position.set(cx, 0.005, cz);
+    scene.add(pad);
+  });
 
-  // Model display shelf
-  box(scene, 3, 0.06, 0.5, M(C.black), 0, 2.6, -14.5);
-  // Design models on shelf
-  const cube = box(scene, 0.35, 0.35, 0.35, M(C.orange), -0.7, 2.85, -14.5);
-  anim.spin.push(cube);
-  const sphere = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 10), M(C.white));
-  sphere.position.set(0.2, 2.85, -14.5);
-  scene.add(sphere);
-  cyl(scene, 0.12, 0.2, 0.35, M(C.navy), 0.9, 2.85, -14.5);
-  // Small pyramid
-  const pyramid = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.3, 4), M(C.orange));
-  pyramid.position.set(-0.1, 2.85, -14.5);
-  scene.add(pyramid);
+  // Dual large monitors with stands, keyboards, mice, and glowing screens
+  // Left: 3D Modeling Viewport (wireframe drone on dark grid)
+  createWorkstationWithScreen(scene, -1.2, -14.15, create3DModelingScreenTexture());
+  // Right: Graphic Design App (SRI drone poster with color/layer tools)
+  createWorkstationWithScreen(scene, 1.2, -14.15, createGraphicDesignScreenTexture());
+
+  // Two ergonomic chairs with black mesh backs and vibrant orange seat cushions, tucked under desk
+  createChair(scene, -1.2, -13.35, 0, { orangeSeat: true });
+  createChair(scene, 1.2, -13.35, 0, { orangeSeat: true });
+
+  // Floating black shelf with warm LED strip underneath, 3 stacked books ("Adobe Illustrator", "Adobe Photoshop", "Blender 3D"), RC car, white mug with SRI logo & waving mascot
+  createDesignFloatingShelfWithProps(scene, 0.0, 2.45, -14.58, anim);
+
+  // Right industrial rack: base 2-door cabinet with silver handles, 2 black pen-nib boxes, clear electronics box, and quadcopter drone ON top shelf
+  createDesigningZoneRack(scene, 3.2, -14.25);
+
+  // Window with dark frame next to the rack
+  createWindow(scene, 4.8, 2.8, -14.73, 0, 1.8, 1.6);
+
+  // Soft directional window daylight illuminating the workstation from the right
+  const designWindowLight = new THREE.DirectionalLight(0xfff5e6, 0.85);
+  designWindowLight.position.set(5.5, 5.2, -11.5);
+  designWindowLight.target.position.set(0.0, 1.0, -14.15);
+  scene.add(designWindowLight);
+  scene.add(designWindowLight.target);
 
   // ━━━━━━━ CODING ZONE (x ≈ 11.0, reference-matched overhaul) ━━━━━━━
   // Workbench Table (5.4m wide, 1.25m deep, 0.82m tall, blonde wood top + black metal legs)
