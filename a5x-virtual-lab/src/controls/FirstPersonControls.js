@@ -27,14 +27,24 @@ const COLLIDERS = [
   { xMin: 18.5, xMax: 20.2, zMin: 5.45, zMax: 14.5 },
   // Doorway blocker (active when door is closed)
   { id: 'door_passage', xMin: 19.2, xMax: 20.2, zMin: 4.15, zMax: 5.45 },
-  // Meeting Room North wall (z = 2.2)
-  { xMin: 19.8, xMax: 25.6, zMin: 1.8, zMax: 2.3 },
-  // Meeting Room South wall (z = 7.4)
-  { xMin: 19.8, xMax: 25.6, zMin: 7.3, zMax: 7.8 },
-  // Meeting Room East wall (x = 25.4)
-  { xMin: 25.2, xMax: 26.0, zMin: 2.2, zMax: 7.4 },
-  // Meeting Room Conference Table
-  { xMin: 21.4, xMax: 24.2, zMin: 4.0, zMax: 5.6 },
+  // AR / VR Lab North wall (z = 2.4, Main Display Wall)
+  { xMin: 19.8, xMax: 34.0, zMin: 2.0, zMax: 2.45 },
+  // AR / VR Lab South wall (z = 16.4, Lounge Wall)
+  { xMin: 19.8, xMax: 34.0, zMin: 16.35, zMax: 16.8 },
+  // AR / VR Lab East wall (x = 33.8, Window Wall)
+  { xMin: 33.65, xMax: 34.2, zMin: 2.4, zMax: 16.4 },
+  // AR / VR Lab TV Credenza
+  { xMin: 23.5, xMax: 30.1, zMin: 2.4, zMax: 3.1 },
+  // AR / VR Lab Left Study Tables block
+  { xMin: 22.2, xMax: 25.6, zMin: 5.2, zMax: 9.5 },
+  // AR / VR Lab Right Study Tables block
+  { xMin: 28.0, xMax: 31.4, zMin: 5.2, zMax: 9.5 },
+  // AR / VR Lab VR Counter & Showcase
+  { xMin: 19.7, xMax: 20.6, zMin: 6.2, zMax: 13.5 },
+  // AR / VR Lab Lounge Bookcases & Wall
+  { xMin: 22.2, xMax: 31.4, zMin: 15.8, zMax: 16.4 },
+  // AR / VR Lab Lounge Coffee Table
+  { xMin: 26.2, xMax: 27.4, zMin: 13.7, zMax: 14.7 },
   // Testing zone racks
   { xMin: -20, xMax: -18.5, zMin: -8.5, zMax: 12.5 },
   // Front wall racks
@@ -205,11 +215,11 @@ export class FirstPersonControls {
     pos.x += (-sinY * fwd + cosY * strafe) * speed;
     pos.z += (-cosY * fwd - sinY * strafe) * speed;
 
-    // Dynamic boundary clamping (Main hall + Meeting room annex)
+    // Dynamic boundary clamping (Main hall + AR / VR Lab annex)
     if (pos.x > 19.4) {
-      // Inside Meeting Room annex
-      pos.x = Math.min(25.0, pos.x);
-      pos.z = Math.max(2.4, Math.min(7.2, pos.z));
+      // Inside AR / VR Lab
+      pos.x = Math.min(33.4, pos.x);
+      pos.z = Math.max(2.7, Math.min(16.0, pos.z));
     } else {
       // Inside Main Lab
       pos.x = Math.max(this.bounds.xMin, pos.x);

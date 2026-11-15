@@ -11,7 +11,7 @@ import { buildBackWall } from './scene/zones/backwall.js';
 import { buildTestingZone } from './scene/zones/testing.js';
 import { buildRightWall } from './scene/zones/rightwall.js';
 import { buildHardwareZone } from './scene/zones/hardware.js';
-import { buildMeetingRoom } from './scene/zones/meeting.js';
+import { buildArVrLab } from './scene/zones/arvr.js';
 import { getInteractiveDoor } from './scene/props/door.js';
 import { FirstPersonControls } from './controls/FirstPersonControls.js';
 import { createLoader } from './ui/loader.js';
@@ -79,7 +79,7 @@ loader.update(0.85);
 const hardwareAnim = buildHardwareZone(scene);
 loader.update(0.92);
 
-const meetingAnim = buildMeetingRoom(scene);
+const arvrAnim = buildArVrLab(scene);
 loader.update(0.98);
 
 // ══════════════════ CONTROLS ══════════════════
@@ -91,8 +91,8 @@ const infoPanel = createInfoPanel();
 const minimap = createMinimap(camera);
 
 createMenu((zone) => {
-  // If teleporting to meeting room, make sure the door is open so the user sees inside
-  if (zone.id === 'meeting') {
+  // If teleporting to AR / VR Lab, make sure the door is open so the user sees inside
+  if (zone.id === 'arvr' || zone.id === 'meeting') {
     const door = getInteractiveDoor();
     if (door && !door.isOpen) {
       door.toggle(true);
@@ -215,6 +215,9 @@ renderer.setAnimationLoop(() => {
   }
   // Ceiling fans
   animParts.fans.forEach((f) => { f.rotation.y += dt * 5; });
+  if (arvrAnim?.fans) {
+    arvrAnim.fans.forEach((f) => { f.rotation.y += dt * 4.5; });
+  }
   // Hovering drone (bob)
   testingAnim.bob.forEach((o) => {
     o.position.y = 3.5 + Math.sin(elapsed * 2) * 0.2;

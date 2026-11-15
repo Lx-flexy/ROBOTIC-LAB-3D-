@@ -23,8 +23,8 @@ export function createMinimap(camera) {
     });
   }
 
-  // Map world coords to canvas (encompassing Main Hall + Meeting Room annex)
-  const minX = -20.5, maxX = 26.2, minZ = -15.5, maxZ = 15.5;
+  // Map world coords to canvas (encompassing Main Hall + AR / VR Lab annex)
+  const minX = -20.5, maxX = 34.5, minZ = -15.5, maxZ = 17.0;
   const mapX = (wx) => 4 + ((wx - minX) / (maxX - minX)) * (W - 8);
   const mapZ = (wz) => 4 + ((maxZ - wz) / (maxZ - minZ)) * (H - 8);
 
@@ -56,20 +56,20 @@ export function createMinimap(camera) {
       ctx.closePath();
       ctx.stroke();
 
-      // Meeting Room annex outline
-      const mrX1 = mapX(19.8), mrX2 = mapX(25.4);
-      const mrZ1 = mapZ(7.4), mrZ2 = mapZ(2.2);
+      // AR / VR Lab annex outline (14m x 14m)
+      const arX1 = mapX(19.8), arX2 = mapX(33.8);
+      const arZ1 = mapZ(16.4), arZ2 = mapZ(2.4);
 
-      ctx.fillStyle = '#1a1a2e';
-      ctx.fillRect(mrX1, mrZ2, mrX2 - mrX1, mrZ1 - mrZ2);
+      ctx.fillStyle = '#141d33';
+      ctx.fillRect(arX1, arZ2, arX2 - arX1, arZ1 - arZ2);
 
       ctx.beginPath();
-      ctx.moveTo(mrX1, dZ1);
-      ctx.lineTo(mrX1, mrZ1);
-      ctx.lineTo(mrX2, mrZ1);
-      ctx.lineTo(mrX2, mrZ2);
-      ctx.lineTo(mrX1, mrZ2);
-      ctx.lineTo(mrX1, dZ2);
+      ctx.moveTo(arX1, dZ1);
+      ctx.lineTo(arX1, arZ1);
+      ctx.lineTo(arX2, arZ1);
+      ctx.lineTo(arX2, arZ2);
+      ctx.lineTo(arX1, arZ2);
+      ctx.lineTo(arX1, dZ2);
       ctx.stroke();
 
       // Tables
@@ -81,8 +81,15 @@ export function createMinimap(camera) {
       };
       drawBox(-9, -4, -5, 9);
       drawBox(4, 9, -5, 9);
-      // Meeting room table
-      drawBox(21.6, 24.0, 4.2, 5.4);
+      // AR / VR Lab student desk blocks
+      drawBox(22.0, 25.8, 5.4, 9.4);
+      drawBox(27.8, 31.6, 5.4, 9.4);
+
+      // AR / VR Lounge Turf Rug
+      ctx.fillStyle = '#2d682a';
+      const rx1 = mapX(23.7), rx2 = mapX(29.9);
+      const ry1 = mapZ(16.1), ry2 = mapZ(12.3);
+      ctx.fillRect(rx1, ry1, rx2 - rx1, ry2 - ry1);
 
       // Zone areas
       ctx.globalAlpha = 0.25;

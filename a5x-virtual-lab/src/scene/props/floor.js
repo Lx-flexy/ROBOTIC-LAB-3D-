@@ -50,7 +50,7 @@ export function createHallFloor(scene) {
  *  - Dark slate border inlays along walkway edges (x = ±2.07m, width 0.06m)
  *  - Two thin muted golden-yellow guide lines (x = -0.65m and +0.65m, width 0.035m)
  */
-function getBakedFloorTexture() {
+export function getBakedFloorTexture() {
   if (_cachedFloorTex) return _cachedFloorTex;
 
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
