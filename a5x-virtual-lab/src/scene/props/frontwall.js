@@ -231,18 +231,50 @@ function createFrontRightPanel(scene) {
     new THREE.PlaneGeometry(4.2, 5.2),
     new THREE.MeshBasicMaterial({ map: tex, side: THREE.FrontSide })
   );
-  mesh.position.set(6.5, 2.8, 14.70);
+  mesh.position.set(8.5, 2.8, 14.70);
   mesh.rotation.y = Math.PI;
   scene.add(mesh);
 }
 
 /* ══════════════════════════════════════════════════════════════════
-   SRI MASCOT — Large robot character on the front wall
-   Loaded from /mascot.png  PlaneGeometry(3.0, 3.6)
-   y = 2.0, x = +1.5 (between door and right panel), z = 14.68
-   rotation.y = Math.PI
+   SRI MASCOT — On the LEFT WALL, in the empty section near front
+   (Testing zone mural covers z = -10.5 to +2.5; mascot goes z ≈ +8)
+   Loaded from /mascot.png  PlaneGeometry(3.2, 3.8)
+   x = -19.72, y = 2.0, z = 8   rotation.y = Math.PI/2 (faces into room)
 ══════════════════════════════════════════════════════════════════ */
 function createMascot(scene) {
+  // ── Background panel behind mascot ──
+  const W = 640, H = 800;
+  const bgTex = canvasTex(W, H, (g) => {
+    // Orange gradient circle behind mascot
+    const grad = g.createRadialGradient(W/2, H/2, 0, W/2, H/2, W*0.52);
+    grad.addColorStop(0, 'rgba(255,122,0,0.22)');
+    grad.addColorStop(0.6, 'rgba(255,122,0,0.08)');
+    grad.addColorStop(1, 'rgba(255,122,0,0)');
+    g.fillStyle = grad;
+    g.beginPath(); g.arc(W/2, H/2, W*0.52, 0, Math.PI*2); g.fill();
+
+    // Dashed orange circle outline
+    g.strokeStyle = '#ff7a00'; g.lineWidth = 6;
+    g.setLineDash([18, 12]);
+    g.beginPath(); g.arc(W/2, H/2, W*0.46, 0, Math.PI*2); g.stroke();
+    g.setLineDash([]);
+
+    // "SRI MASCOT" label below
+    g.fillStyle = '#14284b';
+    g.font = `bold 42px 'Segoe UI', sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('ROBO — SRI', W/2, H*0.9);
+  });
+  const bgMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(3.6, 4.5),
+    new THREE.MeshBasicMaterial({ map: bgTex, transparent: true, depthWrite: false })
+  );
+  bgMesh.position.set(-19.71, 2.0, 8);
+  bgMesh.rotation.y = Math.PI / 2;
+  scene.add(bgMesh);
+
+  // ── Mascot image ──
   const loader = new THREE.TextureLoader();
   loader.load('/mascot.png', (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -254,8 +286,9 @@ function createMascot(scene) {
       depthWrite: false,
     });
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 3.6), mat);
-    mesh.position.set(1.5, 2.0, 14.68);
-    mesh.rotation.y = Math.PI;
+    // Left wall (x = -19.74), facing +X into room → rotation.y = PI/2
+    mesh.position.set(-19.70, 2.1, 8);
+    mesh.rotation.y = Math.PI / 2;
     scene.add(mesh);
   });
 }
