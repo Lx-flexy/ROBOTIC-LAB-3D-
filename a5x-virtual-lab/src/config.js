@@ -13,7 +13,7 @@ export const COLORS = {
   black:  0x1b1b1f,
   white:  0xffffff,
   green:  0x2e9e44,
-  floor:  0xe9e2d8,
+  floor:  0xb2b2b6,
   sky:    0x9fd0ff,
 };
 

@@ -9,6 +9,7 @@ import { createRobot, createFireExtinguisher } from './props/equipment.js';
 import { BRAND_NAME, BRAND_SHORT, LAB_TITLE } from '../config.js';
 
 import { createFrontWallDecor } from './props/frontwall.js';
+import { createHallFloor } from './props/floor.js';
 
 export function buildShell(scene) {
   const animParts = { fans: [], lights: [] };
@@ -71,9 +72,8 @@ export function buildShell(scene) {
   const signText = `${BRAND_NAME}\n${LAB_TITLE.toUpperCase()}`;
   put(scene, createSign(signText, 7, 1.8, { bar: true }), 0, 5.2, 15.28);
 
-  // ──────── HALL FLOOR ────────
-  const floorMat = M(C.floor, { roughness: 0.15, metalness: 0.05 });
-  box(scene, 40, 0.1, 30, floorMat, 0, 0, 0);
+  // ──────── HALL FLOOR (Photo-Accurate Gray Marble with Walkway & Guide Lines) ────────
+  createHallFloor(scene);
 
   // ──────── INTERIOR WALLS ────────
   const wallMat = M(C.cream, { roughness: 0.85 });
@@ -244,7 +244,7 @@ export function buildShell(scene) {
     [0, 5.4, 0], [0, 5.4, -12],
   ];
   lightPositions.forEach(([x, y, z]) => {
-    const light = new THREE.PointLight(0xfff5e0, 18, 20, 1.5);
+    const light = new THREE.PointLight(0xfff5e0, 11, 24, 1.8);
     light.position.set(x, y, z);
     scene.add(light);
     animParts.lights.push(light);
