@@ -326,6 +326,158 @@ function createLeftWallMascot(scene) {
   });
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   6. FAR RIGHT SECTION — big empty wall x≈15, z=15 (9.8m wide)
+   Simple painted look: honeycomb hexagons + motivational quote
+   PlaneGeometry(9, 4.8)  y=2.8  x=15  z=14.60  ry=PI
+══════════════════════════════════════════════════════════════════ */
+function createFrontWallFarRight(scene) {
+  const W = 2048, H = 1100;
+  const tex = canvasTex(W, H, (g) => {
+    g.clearRect(0, 0, W, H);
+
+    // ── Honeycomb hexagon pattern (orange outlines, painted look) ──
+    const hexR = 90;   // outer radius
+    const hexH = hexR * Math.sqrt(3);
+    const cols = 10, rows = 7;
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const cx = col * hexR * 1.5 + (row % 2 === 0 ? 0 : hexR * 0.75) + 60;
+        const cy = row * hexH * 0.5 + 80;
+        // alternating fill alpha
+        const alpha = ((row + col) % 3 === 0) ? 0.18 : ((row + col) % 3 === 1) ? 0.09 : 0.05;
+        g.globalAlpha = alpha;
+        g.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+          const px = cx + hexR * Math.cos(a);
+          const py = cy + hexR * Math.sin(a);
+          i === 0 ? g.moveTo(px, py) : g.lineTo(px, py);
+        }
+        g.closePath();
+        g.fillStyle = '#ff7a00'; g.fill();
+        g.strokeStyle = '#ff7a00'; g.lineWidth = 4; g.stroke();
+        g.globalAlpha = 1;
+      }
+    }
+
+    // ── A few filled accent hexagons ──
+    [[300, 200], [900, 500], [1600, 180], [1800, 700], [500, 850]].forEach(([cx, cy], i) => {
+      g.globalAlpha = 0.12 + i * 0.03;
+      g.fillStyle = i % 2 === 0 ? '#ff7a00' : '#14284b';
+      g.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a = (k / 6) * Math.PI * 2 - Math.PI / 6;
+        const px = cx + 70 * Math.cos(a), py = cy + 70 * Math.sin(a);
+        k === 0 ? g.moveTo(px, py) : g.lineTo(px, py);
+      }
+      g.closePath(); g.fill();
+      g.globalAlpha = 1;
+    });
+
+    // ── Big motivational quote (painted text) ──
+    g.globalAlpha = 0.72;
+    g.fillStyle = '#14284b';
+    g.font = `900 110px 'Segoe UI', sans-serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('BUILD.', W / 2, H * 0.38);
+    g.fillStyle = '#ff7a00';
+    g.fillText('CREATE.', W / 2, H * 0.55);
+    g.fillStyle = '#14284b';
+    g.fillText('INSPIRE.', W / 2, H * 0.72);
+    g.globalAlpha = 1;
+
+    // ── Orange underline below quote ──
+    g.globalAlpha = 0.6;
+    g.strokeStyle = '#ff7a00'; g.lineWidth = 8; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(W * 0.25, H * 0.82); g.lineTo(W * 0.75, H * 0.82); g.stroke();
+    g.globalAlpha = 1;
+
+    // ── Small painted dots scatter ──
+    const dotPositions = [[120,900],[400,950],[700,980],[1100,920],[1500,970],[1900,940],[200,1050],[1700,1060]];
+    dotPositions.forEach(([dx, dy], i) => {
+      g.globalAlpha = 0.25 + (i % 3) * 0.1;
+      g.fillStyle = i % 2 === 0 ? '#ff7a00' : '#14284b';
+      g.beginPath(); g.arc(dx, dy, 12 + i * 3, 0, Math.PI * 2); g.fill();
+      g.globalAlpha = 1;
+    });
+  });
+
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(9, 4.8),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+  );
+  mesh.position.set(15, 2.8, 14.60);
+  mesh.rotation.y = Math.PI;
+  scene.add(mesh);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   7. FAR LEFT SECTION — x≈-14, z=15 (between windows)
+   Simple paint: same honeycomb + "SRI" large watermark
+   PlaneGeometry(5, 4.5)  y=2.6  x=-14  z=14.60  ry=PI
+══════════════════════════════════════════════════════════════════ */
+function createFrontWallFarLeft(scene) {
+  const W = 1200, H = 1050;
+  const tex = canvasTex(W, H, (g) => {
+    g.clearRect(0, 0, W, H);
+
+    // Hexagons
+    const hexR = 70;
+    const hexH = hexR * Math.sqrt(3);
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 9; col++) {
+        const cx = col * hexR * 1.5 + (row % 2 === 0 ? 0 : hexR * 0.75) + 40;
+        const cy = row * hexH * 0.5 + 60;
+        const alpha = ((row + col) % 3 === 0) ? 0.16 : 0.07;
+        g.globalAlpha = alpha;
+        g.strokeStyle = '#14284b'; g.lineWidth = 3;
+        g.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+          i === 0 ? g.moveTo(cx + hexR * Math.cos(a), cy + hexR * Math.sin(a))
+                  : g.lineTo(cx + hexR * Math.cos(a), cy + hexR * Math.sin(a));
+        }
+        g.closePath(); g.stroke();
+        g.globalAlpha = 1;
+      }
+    }
+
+    // "SRI" large watermark
+    g.globalAlpha = 0.08;
+    g.fillStyle = '#ff7a00';
+    g.font = `900 420px Georgia, serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('SRI', W / 2, H / 2);
+    g.globalAlpha = 1;
+
+    // Orange swoosh
+    g.globalAlpha = 0.55;
+    g.strokeStyle = '#ff7a00'; g.lineWidth = 10; g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(80, H * 0.78);
+    g.quadraticCurveTo(W * 0.5, H * 0.9, W - 80, H * 0.72);
+    g.stroke();
+    g.globalAlpha = 1;
+
+    // Small "SRI PUBLIC SCHOOL" text
+    g.globalAlpha = 0.5;
+    g.fillStyle = '#14284b';
+    g.font = `bold 52px Georgia, serif`;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('SRI PUBLIC SCHOOL', W / 2, H * 0.9);
+    g.globalAlpha = 1;
+  });
+
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(5, 4.5),
+    new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false })
+  );
+  mesh.position.set(-14, 2.6, 14.60);
+  mesh.rotation.y = Math.PI;
+  scene.add(mesh);
+}
+
 /* ── EXPORT ── */
 export function createFrontWallDecor(scene) {
   createFrontTopBanner(scene);
@@ -333,4 +485,6 @@ export function createFrontWallDecor(scene) {
   createFrontRightPaint(scene);
   createFrontMascot(scene);
   createLeftWallMascot(scene);
+  createFrontWallFarRight(scene);
+  createFrontWallFarLeft(scene);
 }
