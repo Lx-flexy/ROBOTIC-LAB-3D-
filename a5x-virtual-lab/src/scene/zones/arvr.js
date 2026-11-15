@@ -1112,7 +1112,7 @@ function drawLoungeHeadsetGraphic(ctx, cx, cy) {
   const ir = 35;
   ctx.moveTo(cx - iw / 2 + ir, cy - ih / 2);
   ctx.lineTo(cx + iw / 2 - ir, cy - ih / 2);
-  ctx.arcTo(cx + iw / 2, cy - ih / 2, ctx + iw / 2, cy + ih / 2, ir);
+  ctx.arcTo(cx + iw / 2, cy - ih / 2, cx + iw / 2, cy + ih / 2, ir);
   ctx.lineTo(cx + iw / 2, cy + ih / 2 - ir);
   ctx.arcTo(cx + iw / 2, cy + ih / 2, cx, cy + ih / 2, ir);
   ctx.lineTo(cx + 50, cy + ih / 2);

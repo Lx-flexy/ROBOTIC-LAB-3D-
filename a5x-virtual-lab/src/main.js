@@ -79,7 +79,12 @@ loader.update(0.85);
 const hardwareAnim = buildHardwareZone(scene);
 loader.update(0.92);
 
-const arvrAnim = buildArVrLab(scene);
+let arvrAnim;
+try {
+  arvrAnim = buildArVrLab(scene);
+} catch (err) {
+  console.error('[AR/VR Lab] Error during build:', err);
+}
 loader.update(0.98);
 
 // ══════════════════ CONTROLS ══════════════════
