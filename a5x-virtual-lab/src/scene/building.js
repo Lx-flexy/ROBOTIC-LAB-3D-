@@ -8,6 +8,8 @@ import { createSign, createWindow, createRack, createPlant } from './props/furni
 import { createRobot, createFireExtinguisher } from './props/equipment.js';
 import { BRAND_NAME, BRAND_SHORT, LAB_TITLE } from '../config.js';
 
+import { createFrontWallDecor } from './props/frontwall.js';
+
 export function buildShell(scene) {
   const animParts = { fans: [], lights: [] };
 
@@ -369,6 +371,9 @@ export function buildShell(scene) {
     cyl(scene, 0.07, 0.07, 0.18, Bm(0xfff4d6), lx, 1.05, 17.5, 12);
     cyl(scene, 0.10, 0.10, 0.04, M(0x111111), lx, 1.18, 17.5, 12);
   });
+
+  // ── FRONT WALL DECOR: banners + mascot + panels ──
+  createFrontWallDecor(scene);
 
   return { doors, animParts, mascot };
 }
