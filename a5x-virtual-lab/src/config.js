@@ -91,10 +91,10 @@ export const ZONES = [
     id: 'hardware',
     title: 'Hardware Zone',
     desc: 'Electronics prototyping, soldering, component bins, pegboard tools, bench power supply and oscilloscope testing station.',
-    stand: [15.8, 9.8],
+    stand: [15.5, 10.85],
     yaw: -Math.PI / 2,
-    center: [19.2, 9.8],
-    r: 5,
+    center: [19.2, 10.85],
+    r: 5.5,
     icon: '⚡',
   },
 ];
@@ -107,10 +107,10 @@ export const HOTSPOTS = [
   { id: 'soccerfield', pos: [-15.5, 0.2, -5.6], title: 'Robo Soccer Field', desc: 'A regulation mini soccer pitch where autonomous bots compete in 2v2 matches.', zone: 'testing' },
   { id: 'smarttv', pos: [19.7, 2.8, -5.1], title: 'Smart Display', desc: 'Interactive 75″ smart TV for live robotics, coding, and STEM learning pathways.', zone: 'roboticslab' },
   { id: 'racetrack', pos: [-15.5, 0.1, 0.3], title: 'Robo Race Track', desc: 'Dark circuit with red/white dashed racing line. Robots compete for fastest lap time.', zone: 'testing' },
-  { id: 'hw_soldering', pos: [19.2, 1.1, 9.2], title: 'Soldering & Rework Station', desc: 'Temperature-controlled digital soldering station with heat-resistant iron stand, rosin-core solder spool, and magnifying helping-hands.', zone: 'hardware' },
-  { id: 'hw_instruments', pos: [19.2, 1.3, 11.8], title: 'Test & Measurement Bench', desc: 'Dual-channel digital storage oscilloscope displaying real-time waveforms alongside a 30V / 5A precision bench DC power supply.', zone: 'hardware' },
-  { id: 'hw_components', pos: [19.4, 1.8, 9.6], title: 'Component Storage Rack', desc: '12 organized transparent parts bins holding microcontrollers, sensors, actuators, motor drivers, communication modules, and passive components.', zone: 'hardware' },
-  { id: 'hw_pegboard', pos: [19.6, 2.2, 7.2], title: 'Hardware Tool Pegboard', desc: 'Perforated tool board with pliers, precision screwdrivers, hot glue gun, digital multimeter, side cutters, and tape.', zone: 'hardware' },
+  { id: 'hw_soldering', pos: [19.1, 1.05, 10.0], title: 'Soldering & Rework Station', desc: 'Temperature-controlled digital soldering station with heat-resistant iron stand, rosin-core solder spool, and magnifying helping-hands.', zone: 'hardware' },
+  { id: 'hw_instruments', pos: [19.2, 1.25, 13.65], title: 'Test & Measurement Bench', desc: 'Dual-channel digital storage oscilloscope displaying real-time waveforms alongside a 30V / 5A precision bench DC power supply.', zone: 'hardware' },
+  { id: 'hw_components', pos: [19.4, 1.65, 10.85], title: 'Component Storage Rack', desc: '12 organized transparent parts bins holding microcontrollers, sensors, actuators, motor drivers, communication modules, and passive components.', zone: 'hardware' },
+  { id: 'hw_pegboard', pos: [19.6, 2.0, 8.15], title: 'Hardware Tool Pegboard', desc: 'Perforated tool board with pliers, precision screwdrivers, hot glue gun, digital multimeter, side cutters, and tape.', zone: 'hardware' },
 ];
 
 /* Wall text arrays for painted graphics */
