@@ -33,8 +33,8 @@ const COLLIDERS = [
   { xMin: 19.8, xMax: 34.0, zMin: 16.35, zMax: 16.8 },
   // AR / VR Lab East wall (x = 33.8, Window Wall)
   { xMin: 33.65, xMax: 34.2, zMin: 2.4, zMax: 16.4 },
-  // AR / VR Lab TV Credenza
-  { xMin: 23.5, xMax: 30.1, zMin: 2.4, zMax: 3.1 },
+  // AR / VR Lab TV Credenza (8.4m wide)
+  { xMin: 22.5, xMax: 31.1, zMin: 2.35, zMax: 3.05 },
   // AR / VR Lab Left Study Tables block
   { xMin: 22.2, xMax: 25.6, zMin: 5.2, zMax: 9.5 },
   // AR / VR Lab Right Study Tables block

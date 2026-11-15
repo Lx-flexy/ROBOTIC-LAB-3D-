@@ -227,17 +227,145 @@ export function buildArVrLab(scene) {
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN DISPLAY WALL (North Wall, Z = zMin)
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** Black-Framed Glass Window with Soft Blurred Warm Interior Backdrop */
+function createSoftInteriorWindow(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const w = 1.02;
+  const h = 1.85;
+  const frameD = 0.035;
+  const railT = 0.032;
+  const frameMat = M(0x151518, { roughness: 0.35, metalness: 0.7 });
+
+  // 1. Soft Warm Blurred Office Interior Backing
+  const winTex = canvasTex(256, 256, (ctx) => {
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#f8f4ec');
+    grad.addColorStop(0.3, '#f0e8d8');
+    grad.addColorStop(0.7, '#e4d6be');
+    grad.addColorStop(1, '#c8bca8');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 256);
+
+    const ceilGlow = ctx.createRadialGradient(128, 40, 5, 128, 40, 90);
+    ceilGlow.addColorStop(0, 'rgba(255, 250, 230, 0.85)');
+    ceilGlow.addColorStop(1, 'rgba(240, 230, 210, 0)');
+    ctx.fillStyle = ceilGlow;
+    ctx.beginPath();
+    ctx.arc(128, 40, 90, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = 'rgba(70, 60, 50, 0.18)';
+    ctx.fillRect(0, 160, 256, 96);
+    ctx.fillStyle = 'rgba(40, 45, 55, 0.22)';
+    ctx.fillRect(30, 140, 70, 70);
+    ctx.fillRect(150, 145, 75, 65);
+  });
+
+  const backMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w - railT * 2, h - railT * 2),
+    new THREE.MeshBasicMaterial({ map: winTex })
+  );
+  backMesh.position.set(0, 0, 0.005);
+  g.add(backMesh);
+
+  // 2. Translucent Reflective Glass Pane
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: 0x90b8d8,
+    transparent: true,
+    opacity: 0.28,
+    roughness: 0.12,
+    metalness: 0.2,
+    depthWrite: false,
+  });
+  const glassMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(w - railT, h - railT),
+    glassMat
+  );
+  glassMesh.position.set(0, 0, frameD * 0.5);
+  g.add(glassMesh);
+
+  // 3. Black Metal Outer Frame Rails
+  box(g, w, railT, frameD, frameMat, 0, h / 2 - railT / 2, frameD / 2);
+  box(g, w, railT, frameD, frameMat, 0, -h / 2 + railT / 2, frameD / 2);
+  box(g, railT, h, frameD, frameMat, -w / 2 + railT / 2, 0, frameD / 2);
+  box(g, railT, h, frameD, frameMat, w / 2 - railT / 2, 0, frameD / 2);
+
+  // 4. Black Interior Mullions (1 vertical, 2 horizontal)
+  box(g, 0.018, h - railT * 2, frameD * 0.75, frameMat, 0, 0, frameD * 0.5);
+  [-h * 0.18, h * 0.18].forEach((my) => {
+    box(g, w - railT * 2, 0.018, frameD * 0.75, frameMat, 0, my, frameD * 0.5);
+  });
+
+  parent.add(g);
+  return g;
+}
+
+/** Small Tripod Tracking Sensor Camera */
+function createTripodCamera(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  const mat = M(0x18181c, { roughness: 0.35, metalness: 0.7 });
+  box(g, 0.08, 0.05, 0.06, mat, 0, 0.16, 0);
+  cyl(g, 0.016, 0.016, 0.02, M(0x0e7490, { roughness: 0.1 }), 0, 0.16, 0.035, 12);
+  cyl(g, 0.012, 0.012, 0.03, mat, 0, 0.13, 0, 8);
+  for (let i = 0; i < 3; i++) {
+    const ang = (i * Math.PI * 2) / 3;
+    const leg = new THREE.Group();
+    leg.position.set(0, 0.12, 0);
+    leg.rotation.y = ang;
+    leg.rotation.z = 0.32;
+    cyl(leg, 0.005, 0.005, 0.13, mat, 0, -0.065, 0, 6);
+    g.add(leg);
+  }
+  parent.add(g);
+  return g;
+}
+
+/** Modern Spherical Glowing Globe Lamp */
+function createGlowingGlobeLamp(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  cyl(g, 0.06, 0.06, 0.015, M(0xd97706, { metalness: 0.8, roughness: 0.3 }), 0, 0.0075, 0, 16);
+  const globeGeom = new THREE.SphereGeometry(0.085, 20, 16);
+  const globeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const globeMesh = new THREE.Mesh(globeGeom, globeMat);
+  globeMesh.position.set(0, 0.095, 0);
+  g.add(globeMesh);
+
+  const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.20, depthWrite: false });
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.20, 0.20), shadowMat);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(0, 0.002, 0);
+  g.add(shadow);
+
+  parent.add(g);
+  return g;
+}
+
+/** Black Tech Decor Box / Terrarium */
+function createDecorBox(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  box(g, 0.16, 0.14, 0.14, M(0x18181c, { roughness: 0.35, metalness: 0.6 }), 0, 0.07, 0);
+  box(g, 0.12, 0.10, 0.01, M(0x0e7490, { roughness: 0.2 }), 0, 0.07, 0.071);
+  parent.add(g);
+  return g;
+}
+
 function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
   const g = new THREE.Group();
   g.position.set(cx, floorY, zMin);
 
-  // 1. High-Resolution Painted Wall Texture (4096x2048)
+  // 1. High-Resolution Painted Wall Texture (Aspect Ratio Matched 14.00m x 3.60m)
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const W = isMobile ? 2048 : 4096;
-  const H = isMobile ? 1024 : 2048;
+  const H = Math.round(W / (roomW / roomH)); // Exact 1:1 true aspect ratio!
 
   const muralTex = canvasTex(W, H, (ctx) => {
-    // Cream base wall paint
+    // Warm peach/cream base wall paint
     ctx.fillStyle = '#fff1e3';
     ctx.fillRect(0, 0, W, H);
 
@@ -248,29 +376,32 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
     }
 
     // ── LEFT ANGLED NAVY PANEL WITH 4 STACKED ICONS ──
+    const panelW = Math.round(W * (2.25 / 14.00));
     ctx.save();
-    ctx.shadowColor = 'rgba(20, 40, 75, 0.3)';
-    ctx.shadowBlur = 16;
+    ctx.shadowColor = 'rgba(20, 40, 75, 0.35)';
+    ctx.shadowBlur = 18;
     ctx.shadowOffsetX = 8;
     ctx.fillStyle = '#14284b';
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(W * 0.16, 0);
-    ctx.lineTo(W * 0.12, H);
+    ctx.lineTo(panelW - 12, 0);
+    ctx.lineTo(panelW + 36, H * 0.46);
+    ctx.lineTo(panelW - 24, H);
     ctx.lineTo(0, H);
     ctx.closePath();
     ctx.fill();
     ctx.restore();
 
     // Orange diagonal accent stripe
-    ctx.fillStyle = '#ff7a00';
+    ctx.strokeStyle = '#ff7a00';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(W * 0.16, 0);
-    ctx.lineTo(W * 0.168, 0);
-    ctx.lineTo(W * 0.128, H);
-    ctx.lineTo(W * 0.12, H);
-    ctx.closePath();
-    ctx.fill();
+    ctx.moveTo(panelW - 12, 0);
+    ctx.lineTo(panelW + 36, H * 0.46);
+    ctx.lineTo(panelW - 24, H);
+    ctx.stroke();
 
     // 4 Stacked Icons on Navy Panel
     const panelItems = [
@@ -279,53 +410,58 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
       { icon: 'circle360', label: '360°\nImmersive\nLearning' },
       { icon: 'cube3d', label: '3D\nVisualization' },
     ];
+    const iconCx = panelW * 0.46;
     panelItems.forEach((item, idx) => {
-      const iy = H * 0.18 + idx * (H * 0.19);
-      const ix = W * 0.065;
-      drawPanelVectorIcon(ctx, ix, iy, item.icon);
+      const iy = H * 0.16 + idx * (H * 0.22);
+      drawPanelVectorIcon(ctx, iconCx, iy, item.icon);
 
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(W * 0.0125)}px 'Segoe UI', system-ui, sans-serif`;
+      ctx.font = `bold ${Math.round(W * 0.0095)}px 'Segoe UI', system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       const lines = item.label.split('\n');
       lines.forEach((l, li) => {
-        ctx.fillText(l, ix, iy + W * 0.024 + li * (W * 0.014));
+        ctx.fillText(l, iconCx, iy + 36 + li * 22);
       });
     });
 
-    // ── TOP-CENTER TITLE HEADER ──
-    const midX = W * 0.54;
-    const topY = H * 0.15;
+    // ── TOP-CENTER TITLE HEADER (Upper Wall Portion, 3D Y ~ 2.75m to 3.45m) ──
+    const midX = W * 0.535;
+    const topY = Math.round(H * 0.128); // 3D Y ~ 3.14m
 
     // (A) Left: Orange sketch-style isometric cube with dashed circle
-    drawSketchCubeWithCircle(ctx, midX - W * 0.26, topY);
+    drawSketchCubeWithCircle(ctx, midX - W * 0.24, topY);
 
-    // (B) Center SRI Logo + Tree
-    drawSriLotusEmblem(ctx, midX - W * 0.11, topY, W * 0.042);
+    // (B) Center: SRI Logo + Tree Emblem
+    drawSriLotusEmblem(ctx, midX - W * 0.095, topY, Math.round(W * 0.034));
 
     // Thin vertical divider line
     ctx.fillStyle = '#ff7a00';
-    ctx.fillRect(midX - W * 0.025, topY - H * 0.06, 6, H * 0.12);
+    ctx.fillRect(midX - W * 0.022, topY - 35, 4, 70);
 
     // "AR / VR LAB" Title (AR / VR in navy italic bold, LAB in orange)
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.font = `italic 900 ${Math.round(W * 0.038)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.font = `italic 900 ${Math.round(W * 0.028)}px 'Segoe UI', system-ui, sans-serif`;
     ctx.fillStyle = '#14284b';
-    ctx.fillText('AR / VR ', midX - W * 0.01, topY - H * 0.01);
+    ctx.fillText('AR / VR ', midX - W * 0.008, topY - 6);
     const arw = ctx.measureText('AR / VR ').width;
     ctx.fillStyle = '#ff7a00';
-    ctx.fillText('LAB', midX - W * 0.01 + arw, topY - H * 0.01);
+    ctx.fillText('LAB', midX - W * 0.008 + arw, topY - 6);
 
-    // Sub-motto: "— EXPLORE • CREATE • EXPERIENCE • BUILD —"
+    // Sub-motto: "— EXPLORE • CREATE • EXPERIENCE • BUILD —" (3D Y ~ 2.82m)
+    const taglineY = Math.round(H * 0.217);
     ctx.fillStyle = '#14284b';
-    ctx.font = `900 ${Math.round(W * 0.014)}px 'Segoe UI', system-ui, sans-serif`;
-    ctx.textAlign = 'left';
-    ctx.fillText('—  EXPLORE  •  CREATE  •  EXPERIENCE  •  BUILD  —', midX - W * 0.01, topY + H * 0.045);
+    ctx.font = `900 ${Math.round(W * 0.0105)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('—   EXPLORE   •   CREATE   •   EXPERIENCE   •   BUILD   —', midX + W * 0.032, taglineY);
 
-    // (C) Right: Navy line-art person wearing VR headset with orange wireframe cube
-    drawVrPersonSilhouette(ctx, midX + W * 0.25, topY);
+    // (C) Right: Orange sketch cube
+    drawSketchCubeWithCircle(ctx, midX + W * 0.22, topY);
+
+    // (D) Right: Navy line-art person wearing VR headset
+    drawVrPersonSilhouette(ctx, midX + W * 0.31, topY);
   });
 
   const muralMesh = new THREE.Mesh(
@@ -335,139 +471,191 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
   muralMesh.position.set(0, roomH / 2, 0.01);
   g.add(muralMesh);
 
-  // 2. Center Wall-Mounted 75" Smart TV Display (3.2m x 1.8m)
-  const tvW = 3.20, tvH = 1.80;
-  const tvY = 2.05;
+  // 2. Center Wall-Mounted 75" Smart TV Display (3.00m x 1.68m, 16:9)
+  const tvW = 3.00, tvH = 1.68;
+  const tvY = 1.62; // TV center: bottom at 0.78m, top at 2.46m (leaves 0.35m gap below tagline!)
+
+  // Soft drop shadow behind TV on wall
+  const tvShadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25, depthWrite: false });
+  const tvShadow = new THREE.Mesh(new THREE.PlaneGeometry(tvW + 0.16, tvH + 0.16), tvShadowMat);
+  tvShadow.position.set(0, tvY - 0.02, 0.015);
+  g.add(tvShadow);
 
   const tvScreenTex = canvasTex(1024, 576, (ctx) => {
     // Deep blue-purple tech gradient
     const grad = ctx.createLinearGradient(0, 0, 1024, 576);
-    grad.addColorStop(0, '#0a1226');
-    grad.addColorStop(0.5, '#122550');
-    grad.addColorStop(1, '#1b3a6b');
+    grad.addColorStop(0, '#081226');
+    grad.addColorStop(0.5, '#162854');
+    grad.addColorStop(1, '#204278');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1024, 576);
 
-    // Orange dynamic curves at bottom
+    // Orange dynamic curve at bottom-left corner
     ctx.fillStyle = '#ff7a00';
     ctx.beginPath();
-    ctx.moveTo(0, 480);
-    ctx.bezierCurveTo(300, 420, 700, 560, 1024, 460);
-    ctx.lineTo(1024, 576);
+    ctx.moveTo(0, 420);
+    ctx.bezierCurveTo(180, 410, 260, 520, 360, 576);
     ctx.lineTo(0, 576);
     ctx.closePath();
     ctx.fill();
 
     // Top SRI Logo Emblem
-    drawSriLotusEmblem(ctx, 512, 100, 32);
+    drawSriLotusEmblem(ctx, 512, 85, 26);
 
     // Title text
     ctx.fillStyle = '#ffffff';
-    ctx.font = `italic 700 48px 'Segoe UI', system-ui, sans-serif`;
+    ctx.font = `italic 700 42px 'Segoe UI', system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('AR / VR Lab', 512, 175);
+    ctx.fillText('AR / VR Lab', 512, 165);
+
+    // Digital clock top right
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.font = '600 24px system-ui, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('10:24', 980, 45);
 
     // 4 White Rounded App Cards
     const cards = [
-      { icon: '🥽', name: 'VR Suite' },
-      { icon: '📱', name: 'AR Scan' },
-      { icon: '🔄', name: '360° Lab' },
-      { icon: '🧊', name: '3D Spatial' },
+      { icon: 'headset', name: 'VR Suite' },
+      { icon: 'ar', name: 'AR Scan' },
+      { icon: 'circle360', name: '360° Lab' },
+      { icon: 'cube3d', name: '3D Spatial' },
     ];
     cards.forEach((c, i) => {
-      const bx = 200 + i * 165;
-      const by = 260;
+      const bx = 245 + i * 178;
+      const by = 265;
       // White rounded background card
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
       ctx.beginPath();
-      ctx.roundRect(bx - 60, by, 120, 105, 14);
+      ctx.roundRect(bx - 65, by, 130, 115, 16);
       ctx.fill();
 
-      ctx.font = '40px sans-serif';
-      ctx.fillText(c.icon, bx, by + 45);
+      // Card Icon
+      drawPanelVectorIcon(ctx, bx, by + 46, c.icon);
 
       ctx.fillStyle = '#14284b';
-      ctx.font = 'bold 16px sans-serif';
-      ctx.fillText(c.name, bx, by + 85);
+      ctx.font = 'bold 16px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(c.name, bx, by + 94);
     });
+
+    // Pagination dots at bottom
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    for (let d = 0; d < 5; d++) {
+      ctx.beginPath();
+      ctx.arc(472 + d * 20, 520, d === 0 ? 5 : 3.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   });
 
   const tvScreen = new THREE.Mesh(
     new THREE.PlaneGeometry(tvW, tvH),
-    new THREE.MeshBasicMaterial({ map: tvScreenTex })
+    new THREE.MeshStandardMaterial({
+      map: tvScreenTex,
+      roughness: 0.18,
+      metalness: 0.05,
+      emissive: 0x142850,
+      emissiveIntensity: 0.40,
+    })
   );
-  tvScreen.position.set(0, tvY, 0.08);
+  tvScreen.position.set(0, tvY, 0.055);
   g.add(tvScreen);
 
   // Black metallic TV frame / bezel
-  box(g, tvW + 0.08, tvH + 0.08, 0.05, M(0x111115, { roughness: 0.35, metalness: 0.8 }), 0, tvY, 0.04);
-  // Slim top webcam bar
-  box(g, 0.20, 0.03, 0.04, M(0x222226), 0, tvY + tvH / 2 + 0.02, 0.06);
+  box(g, tvW + 0.04, tvH + 0.04, 0.035, M(0x141416, { roughness: 0.35, metalness: 0.7 }), 0, tvY, 0.03);
+  // Slim top webcam/soundbar bar
+  box(g, 0.36, 0.035, 0.04, M(0x1a1a1e, { roughness: 0.4 }), 0, tvY + tvH / 2 + 0.02, 0.05);
 
-  // 3. Navy Lowline Credenza / Cabinet below TV
-  const credW = 6.60, credH = 0.68, credD = 0.58;
+  // 3. Navy Lowline Credenza / Cabinet below TV (8.4m wide x 0.62m high x 0.50m deep)
+  const credW = 8.40, credH = 0.62, credD = 0.50;
   const credY = credH / 2;
   // Deep navy body
-  box(g, credW, credH - 0.04, credD, M(C.navy, { roughness: 0.5 }), 0, credY - 0.02, credD / 2);
-  // Blonde wood countertop
-  box(g, credW + 0.04, 0.04, credD + 0.04, M(0xd4a373, { roughness: 0.4 }), 0, credH - 0.02, credD / 2);
-  // Cabinet door division grooves and chrome pull handles
-  for (let d = -2.4; d <= 2.4; d += 1.2) {
-    box(g, 0.015, credH - 0.12, 0.02, M(0x0e1b33), d, credY - 0.02, credD + 0.005);
-    box(g, 0.12, 0.015, 0.02, M(0xd1d5db, { metalness: 0.8 }), d + 0.45, credY + 0.15, credD + 0.015);
+  box(g, credW, credH - 0.04, credD, M(C.navy, { roughness: 0.55 }), 0, credY - 0.02, credD / 2);
+  // Blonde honey wood countertop
+  box(g, credW + 0.04, 0.035, credD + 0.04, M(0xd8a878, { roughness: 0.4 }), 0, credH - 0.018, credD / 2);
+  // Orange front bevel edge trim on countertop
+  box(g, credW + 0.04, 0.012, 0.015, M(C.orange), 0, credH - 0.032, credD + 0.02);
+
+  // 8 Cabinet doors with small orange round dot handles
+  const doorWidth = credW / 8;
+  for (let i = 0; i < 8; i++) {
+    const dx = -credW / 2 + doorWidth * (i + 0.5);
+    // Door dividing groove
+    box(g, 0.012, credH - 0.10, 0.015, M(0x0e1b33), -credW / 2 + doorWidth * i, credY - 0.02, credD + 0.005);
+    // Orange round dot handle
+    cyl(g, 0.014, 0.014, 0.018, M(C.orange), dx + (i % 2 === 0 ? 0.22 : -0.22), credY + 0.12, credD + 0.012, 12);
   }
+  // Warm LED toe-kick strip under cabinet
+  box(g, credW - 0.2, 0.015, 0.03, Bm(0xfff2b0), 0, 0.015, credD * 0.4);
+
+  // Cabinet Countertop Props:
+  const topY0 = credH;
+  // Left: Potted plant & glowing globe lamp
+  createLeafyPlant(g, -3.20, topY0, credD * 0.5, { scale: 0.85, potColor: 0xffffff });
+  createGlowingGlobeLamp(g, -2.60, topY0, credD * 0.5);
+  // Right: Decor box, books, plant
+  createDecorBox(g, 2.50, topY0, credD * 0.5);
+  createBookRow(g, 3.10, topY0 + 0.12, credD * 0.5, 8);
+  createLeafyPlant(g, 3.70, topY0, credD * 0.5, { scale: 0.85, potColor: 0xffffff });
 
   // 4. Floating Wooden Shelves on Left and Right of TV with LED Strips
-  const shelfXPositions = [-2.60, 2.60];
-  const shelfHeights = [1.25, 1.85, 2.45];
-  const shelfW = 1.70, shelfD = 0.30, shelfT = 0.04;
+  const shelfXPositions = [-2.35, 2.35];
+  const shelfHeights = [1.15, 1.65, 2.15];
+  const shelfW = 1.35, shelfD = 0.28, shelfT = 0.038;
 
-  shelfXPositions.forEach((sx) => {
+  shelfXPositions.forEach((sx, stackIdx) => {
     shelfHeights.forEach((sy, tier) => {
       // Wood shelf plank
-      box(g, shelfW, shelfT, shelfD, M(0xd4a373, { roughness: 0.4 }), sx, sy, shelfD / 2);
+      box(g, shelfW, shelfT, shelfD, M(0xd8a878, { roughness: 0.4 }), sx, sy, shelfD / 2);
       // Warm LED underglow strip
-      box(g, shelfW - 0.1, 0.01, 0.03, Bm(0xfff6e5), sx, sy - shelfT / 2 - 0.005, shelfD / 2);
+      box(g, shelfW - 0.1, 0.008, 0.02, Bm(0xfff4be), sx, sy - shelfT / 2 - 0.004, shelfD / 2);
 
       // Shelf props
-      if (tier === 0) {
-        // Bottom shelf: Books and controllers
-        createMiniBookStack(g, sx - 0.50, sy + 0.12, shelfD / 2);
-        createMiniVrController(g, sx + 0.20, sy + 0.06, shelfD / 2);
-        createMiniVrController(g, sx + 0.45, sy + 0.06, shelfD / 2);
-      } else if (tier === 1) {
-        // Middle shelf: White VR Headset in center & small succulent
-        createMiniVrHeadset(g, sx, sy + 0.11, shelfD / 2);
-        createLeafyPlant(g, sx + 0.55, sy + shelfT / 2, shelfD / 2, { scale: 0.65 });
-      } else if (tier === 2) {
-        // Top shelf: Another VR headset and hanging trailing ivy plant
-        createMiniVrHeadset(g, sx - 0.35, sy + 0.11, shelfD / 2);
-        createTrailingIvyPlant(g, sx + 0.45, sy + shelfT / 2, shelfD / 2);
+      if (stackIdx === 0) {
+        // Left Stack:
+        if (tier === 0) {
+          // Bottom shelf: White VR Headset + 2 black controllers + books
+          createMiniVrHeadset(g, sx - 0.35, sy + 0.11, shelfD / 2);
+          createMiniVrController(g, sx + 0.15, sy + 0.06, shelfD / 2);
+          createMiniVrController(g, sx + 0.38, sy + 0.06, shelfD / 2);
+        } else if (tier === 1) {
+          // Middle shelf: Row of colorful books + small robot figurine
+          createBookRow(g, sx - 0.22, sy + 0.12, shelfD / 2, 7);
+          createMiniRobotToy(g, sx + 0.36, sy + 0.02, shelfD / 2);
+        } else if (tier === 2) {
+          // Top shelf: Lush leafy plant with trailing ivy hanging down side
+          createTrailingIvyPlant(g, sx - 0.25, sy + shelfT / 2, shelfD / 2);
+          createLeafyPlant(g, sx + 0.25, sy + shelfT / 2, shelfD / 2, { scale: 0.70 });
+        }
+      } else {
+        // Right Stack:
+        if (tier === 0) {
+          // Bottom shelf: White VR Headset + 2 controllers
+          createMiniVrHeadset(g, sx - 0.25, sy + 0.11, shelfD / 2);
+          createMiniVrController(g, sx + 0.20, sy + 0.06, shelfD / 2);
+          createMiniVrController(g, sx + 0.42, sy + 0.06, shelfD / 2);
+        } else if (tier === 1) {
+          // Middle shelf: Tripod camera + books
+          createTripodCamera(g, sx - 0.32, sy + shelfT / 2, shelfD / 2);
+          createBookRow(g, sx + 0.15, sy + 0.12, shelfD / 2, 6);
+        } else if (tier === 2) {
+          // Top shelf: Cascading trailing ivy plant
+          createTrailingIvyPlant(g, sx + 0.25, sy + shelfT / 2, shelfD / 2);
+          createLeafyPlant(g, sx - 0.25, sy + shelfT / 2, shelfD / 2, { scale: 0.70 });
+        }
       }
     });
   });
 
-  // 5. Black-Framed Glass Door/Window Panels Flanking Outer Shelves
-  [-4.80, 4.80].forEach((gx) => {
-    const gw = 1.80, gh = 2.60;
-    // Outer black frame
-    box(g, gw, gh, 0.08, M(0x111116, { roughness: 0.4, metalness: 0.5 }), gx, gh / 2, 0.05);
-    // Dark tinted translucent glass pane
-    const gMat = new THREE.MeshPhysicalMaterial({
-      color: 0x90b5d0,
-      transparent: true,
-      opacity: 0.45,
-      roughness: 0.1,
-      metalness: 0.2,
-      transmission: 0.7,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const gPane = new THREE.Mesh(new THREE.PlaneGeometry(gw - 0.1, gh - 0.1), gMat);
-    gPane.position.set(gx, gh / 2, 0.05);
-    g.add(gPane);
+  // 5. Black-Framed Glass Windows Flanking Outer Shelves (Clean Architectural Windows, ZERO Solid Black Blocks!)
+  [-3.85, 3.85].forEach((gx) => {
+    createSoftInteriorWindow(g, gx, 1.625, 0.02);
   });
+
+  // 6. Tall Floor Plant in Front of Left Navy Panel
+  createLeafyPlant(g, -5.80, 0, 0.50, { isTall: true });
 
   parent.add(g);
 }
