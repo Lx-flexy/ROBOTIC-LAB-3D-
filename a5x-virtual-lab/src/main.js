@@ -45,7 +45,7 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 // ══════════════════ SCENE + CAMERA ══════════════════
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 300);
+const camera = new THREE.PerspectiveCamera(70, 1, 0.15, 120);
 camera.position.set(0, 1.7, 32); // Start outside
 
 // ══════════════════ LIGHTING ══════════════════

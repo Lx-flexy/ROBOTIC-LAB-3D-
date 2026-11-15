@@ -1,95 +1,57 @@
 /**
- * props/floor.js — Photo-Accurate Gray Marble Floor with Subtle Seams,
- * Central Lighter Walkway Strip, Muted Yellow Guide Lines, and Soft Glossy Reflections.
+ * props/floor.js — Robust, Single-Mesh Gray Marble Floor with Baked Walkway & Guide Lines.
  *
- * Built to match reference image (media_1794746907831_7860e79d.jpg):
- *  - Light-to-mid gray marble base (#B2B2B7 / #A8A8AD to #B9B9BD)
- *  - Organic white and soft charcoal veining with clouding
- *  - Subtle 1.2m x 1.2m tile seams with faint beveled edge highlights
- *  - Satin sheen (roughness = 0.35, metalness = 0.0) removing specular glare spots
- *  - Lighter rectangular walkway strip (#C8C8CD) along the central aisle (x = -2.0 to +2.0)
- *  - Two thin muted golden-yellow guide lines (#D4A237) centered in walkway
- *  - Outer darker marble inlay border bands
- *  - Seamless procedural texture (2048x2048, toroidal wrapping, max anisotropy, sRGB)
+ * All floor elements (gray marble base, 1.25m tile seams, lighter walkway strip,
+ * dark slate border inlays, and two thin muted yellow guide lines) are baked directly
+ * into ONE single high-resolution texture applied to ONE single floor mesh.
+ *
+ * This completely ELIMINATES:
+ *  - Z-fighting between floor, walkway, borders, and guide lines (zero extra meshes)
+ *  - Transparent sorting glitches
+ *  - Fractional UV tiling moiré and seams
+ *  - Glancing-angle depth buffer quantization errors
  */
 
 import * as THREE from 'three';
 import { box } from '../../utils/geometry.js';
 import { M } from '../../utils/materials.js';
 
-// Cached textures
-let _mainMarbleTex = null;
-let _walkwayMarbleTex = null;
+let _cachedFloorTex = null;
 
-/** Create and return the complete marble floor assembly */
+/** Create and return the single-mesh marble floor */
 export function createHallFloor(scene) {
   const g = new THREE.Group();
 
-  // 1. Structural base slab (replaces old plain floor box)
-  box(g, 40, 0.1, 30, M(0x808084, { roughness: 0.9 }), 0, 0, 0);
-
-  // 2. High-Res Procedural Gray Marble Floor Surface (40m x 30m at y = 0.05)
-  const mainTex = getMarbleTexture(false);
-  const mainMat = new THREE.MeshStandardMaterial({
-    map: mainTex,
+  // 1. Single structural slab with baked gray marble floor material
+  const floorTex = getBakedFloorTexture();
+  const floorMat = new THREE.MeshStandardMaterial({
+    map: floorTex,
     color: 0xffffff,
     roughness: 0.35,
     metalness: 0.0,
-    envMapIntensity: 0.4,
+    envMapIntensity: 0.0, // Clean non-flickering specular
   });
 
-  const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(40, 30), mainMat);
-  floorMesh.rotation.x = -Math.PI / 2;
-  floorMesh.position.set(0, 0.05, 0);
-  floorMesh.receiveShadow = true;
+  // Top surface is at y = 0.05, bottom at y = -0.05, exactly meeting the walls & baseboard
+  const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(40, 0.1, 30), floorMat);
+  floorMesh.position.set(0, 0, 0);
   g.add(floorMesh);
-
-  // 3. Central Lighter Marble Walkway Strip (x = -2.0 to +2.0, z = -14.6 to +14.6)
-  // Clear of central tables (tables are at x = ±6.5, chairs end at x = ±3.5)
-  const walkW = 4.0;
-  const walkL = 29.2;
-  const walkTex = getMarbleTexture(true);
-
-  const walkMat = new THREE.MeshStandardMaterial({
-    map: walkTex,
-    color: 0xffffff,
-    roughness: 0.35,
-    metalness: 0.0,
-    envMapIntensity: 0.4,
-    polygonOffset: true,
-    polygonOffsetFactor: -1,
-    polygonOffsetUnits: -1,
-  });
-
-  const walkwayMesh = new THREE.Mesh(new THREE.PlaneGeometry(walkW, walkL), walkMat);
-  walkwayMesh.rotation.x = -Math.PI / 2;
-  walkwayMesh.position.set(0, 0.051, 0);
-  walkwayMesh.receiveShadow = true;
-  g.add(walkwayMesh);
-
-  // 4. Darker Charcoal Marble Inlay Border Bands on Walkway Edges (width = 0.06m)
-  const borderMat = M(0x5c5c62, { roughness: 0.38, metalness: 0.0 });
-  [-walkW / 2 + 0.03, walkW / 2 - 0.03].forEach((bx) => {
-    box(g, 0.06, 0.002, walkL, borderMat, bx, 0.0515, 0);
-  });
-
-  // 5. Two Thin Muted Golden-Yellow Guide Lines (width = 0.035m, spaced 1.3m apart)
-  const yellowLineMat = M(0xd4a237, { roughness: 0.55, metalness: 0.0 });
-  [-0.65, 0.65].forEach((lx) => {
-    box(g, 0.035, 0.002, walkL - 0.2, yellowLineMat, lx, 0.052, 0);
-  });
 
   scene.add(g);
   return g;
 }
 
 /**
- * Generate a 2048x2048 seamless, tileable gray marble texture with organic veining
- * and subtle 1.2m x 1.2m tile grout seams.
+ * Generate a single comprehensive floor texture containing:
+ *  - Gray marble field (#B2B2B7) across the 40m x 30m hall
+ *  - Faint, elegant tile grout seams (every 1.25m in world coordinates)
+ *  - Organic flowing white and smoky slate-charcoal veining
+ *  - Central lighter walkway strip (#CDCDD2, x = -2.1m to +2.1m)
+ *  - Dark slate border inlays along walkway edges (x = ±2.07m, width 0.06m)
+ *  - Two thin muted golden-yellow guide lines (x = -0.65m and +0.65m, width 0.035m)
  */
-function getMarbleTexture(isWalkway = false) {
-  if (isWalkway && _walkwayMarbleTex) return _walkwayMarbleTex;
-  if (!isWalkway && _mainMarbleTex) return _mainMarbleTex;
+function getBakedFloorTexture() {
+  if (_cachedFloorTex) return _cachedFloorTex;
 
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const W = isMobile ? 1024 : 2048;
@@ -102,77 +64,86 @@ function getMarbleTexture(isWalkway = false) {
   const imgData = ctx.createImageData(W, H);
   const data = imgData.data;
 
-  // Base tones:
-  // Main floor: mid-gray (#B2B2B7, R=178, G=178, B=183)
-  // Walkway: lighter gray (#CECED2, R=206, G=206, B=210)
-  const baseR = isWalkway ? 206 : 178;
-  const baseG = isWalkway ? 206 : 178;
-  const baseB = isWalkway ? 210 : 183;
-
+  // Hall dimensions: X: -20m to +20m (40m), Z: -15m to +15m (30m)
+  // Tile pitch: 1.25m (32 tiles across X, 24 tiles across Z)
   for (let y = 0; y < H; y++) {
     const v = y / H;
-    const sinV = Math.sin(v * Math.PI * 2);
-    const cosV = Math.cos(v * Math.PI * 2);
+    const worldZ = -15 + v * 30;
 
     for (let x = 0; x < W; x++) {
       const u = x / W;
-      const sinU = Math.sin(u * Math.PI * 2);
-      const cosU = Math.cos(u * Math.PI * 2);
+      const worldX = -20 + u * 40;
 
-      // 1. Toroidal periodic domain warping (guarantees 100% seamless tileability)
-      const w1 = Math.sin((u * 4 + v * 3) * Math.PI * 2) * 0.45 + Math.cos((u * 2 - v * 5) * Math.PI * 2) * 0.30;
-      const w2 = Math.cos((u * 5 - v * 2) * Math.PI * 2) * 0.35 + Math.sin((u * 3 + v * 4) * Math.PI * 2) * 0.25;
+      // 1. Zone masks in world coordinates
+      const isWalkway = Math.abs(worldX) <= 2.1 && Math.abs(worldZ) <= 14.6;
+      const isBorder = isWalkway && Math.abs(Math.abs(worldX) - 2.07) <= 0.035;
+      const isYellow = isWalkway && Math.abs(Math.abs(worldX) - 0.65) <= 0.022 && Math.abs(worldZ) <= 14.4;
 
-      // 2. Vein Coordinates with natural diagonal fracture flow
-      const coord1 = (u * 3 + v * 4 + w1 * 0.65) * Math.PI * 2;
-      const coord2 = (u * 6 - v * 5 + w2 * 0.75) * Math.PI * 2;
-      const coord3 = (u * 12 + v * 10 + (w1 - w2) * 0.4) * Math.PI * 2;
+      // 2. Continuous organic marble veining across the whole hall
+      // Scaled by tile size for natural proportions
+      const sX = worldX / 1.25;
+      const sZ = worldZ / 1.25;
+
+      const w1 = Math.sin(sX * 0.75 + sZ * 0.6) * 0.5 + Math.cos(sX * 0.4 - sZ * 0.85) * 0.3;
+      const w2 = Math.cos(sX * 1.05 - sZ * 0.5) * 0.4 + Math.sin(sX * 0.65 + sZ * 0.95) * 0.3;
+
+      const coord1 = (sX * 0.55 + sZ * 0.75 + w1 * 0.65) * Math.PI;
+      const coord2 = (sX * 1.2 - sZ * 1.05 + w2 * 0.75) * Math.PI;
 
       const v1 = Math.sin(coord1);
       const v2 = Math.sin(coord2);
-      const v3 = Math.sin(coord3);
 
-      // 3. Organic mineral clouds / mottling
-      const cloud = (sinU * cosV + cosU * sinV) * 5.5 + Math.sin((u * 2 - v * 2) * Math.PI * 2) * 3.0;
+      // Soft mineral clouds
+      const cloud = Math.sin(worldX * 0.18 + worldZ * 0.22) * 5.0;
 
-      // 4. Non-linear veining response:
-      // Dark smoky charcoal veins
-      const veinDark =
-        Math.pow(Math.max(0, -v1), 3.5) * 52 +
-        Math.pow(Math.max(0, -v2), 4.0) * 32 +
-        Math.pow(Math.max(0, -v3), 5.0) * 18;
+      // Veins: smooth power response without harsh high-frequency noise (prevents shimmer)
+      const veinDark = Math.pow(Math.max(0, -v1), 3.2) * 44 + Math.pow(Math.max(0, -v2), 3.8) * 26;
+      const veinWhite = Math.pow(Math.max(0, v1), 2.8) * 38 + Math.pow(Math.max(0, v2), 3.2) * 24;
 
-      // Crisp frosty white/light-gray veins
-      const veinWhite =
-        Math.pow(Math.max(0, v1), 3.0) * 44 +
-        Math.pow(Math.max(0, v2), 3.5) * 28 +
-        Math.pow(Math.max(0, v3), 4.5) * 16;
-
-      // 5. Subtle Tile Grout Seams (4x4 tiles in 4.8m x 4.8m patch = 1.2m x 1.2m tiles)
-      const tileU = (u * 4) % 1;
-      const tileV = (v * 4) % 1;
-      const distU = Math.min(tileU, 1 - tileU);
-      const distV = Math.min(tileV, 1 - tileV);
-      const seamDist = Math.min(distU, distV) * (W / 4); // distance in pixels to nearest seam
+      // 3. Faint 1.25m tile grout seams
+      const tileU = Math.abs(sX) % 1;
+      const tileV = Math.abs(sZ) % 1;
+      const distU = Math.min(tileU, 1 - tileU) * 1.25;
+      const distV = Math.min(tileV, 1 - tileV) * 1.25;
+      const seamDist = Math.min(distU, distV); // Distance in meters to nearest seam
 
       let seamMod = 0;
-      if (seamDist < 2.5) {
-        // Soft darkening on the seam line
-        seamMod = -(2.5 - seamDist) * 14;
-      } else if (seamDist >= 2.5 && seamDist < 4.5) {
-        // Very subtle micro-highlight on beveled edge
-        seamMod = (4.5 - seamDist) * 3.5;
+      if (seamDist < 0.022) {
+        // Very soft darkening on the grout seam
+        seamMod = -((0.022 - seamDist) / 0.022) * 14;
+      } else if (seamDist >= 0.022 && seamDist < 0.04) {
+        // Subtle micro-highlight on beveled edge
+        seamMod = ((0.04 - seamDist) / 0.018) * 2.5;
       }
 
-      // Final RGB composition
-      const r = Math.min(255, Math.max(0, Math.round(baseR + cloud + veinWhite - veinDark + seamMod)));
-      const g = Math.min(255, Math.max(0, Math.round(baseG + cloud + veinWhite - veinDark + seamMod)));
-      const b = Math.min(255, Math.max(0, Math.round(baseB + cloud + veinWhite * 1.04 - veinDark * 0.96 + seamMod)));
+      // 4. Base color selection
+      // Outside: Mid-gray marble (#B2B2B7, R=178, G=178, B=183)
+      // Walkway: Lighter gray marble (#CECED3, R=206, G=206, B=211)
+      let r = isWalkway ? 206 : 178;
+      let g = isWalkway ? 206 : 178;
+      let b = isWalkway ? 211 : 183;
+
+      r += cloud + veinWhite - veinDark + seamMod;
+      g += cloud + veinWhite - veinDark + seamMod;
+      b += cloud + veinWhite * 1.04 - veinDark * 0.96 + seamMod;
+
+      // 5. Walkway Inlay Features
+      if (isBorder) {
+        // Slate-charcoal border strip
+        r = 92 + cloud * 0.5;
+        g = 92 + cloud * 0.5;
+        b = 98 + cloud * 0.5;
+      } else if (isYellow) {
+        // Muted golden-yellow guide lines (#D4A237)
+        r = 212;
+        g = 162;
+        b = 55;
+      }
 
       const idx = (y * W + x) * 4;
-      data[idx] = r;
-      data[idx + 1] = g;
-      data[idx + 2] = b;
+      data[idx] = Math.min(255, Math.max(0, Math.round(r)));
+      data[idx + 1] = Math.min(255, Math.max(0, Math.round(g)));
+      data[idx + 2] = Math.min(255, Math.max(0, Math.round(b)));
       data[idx + 3] = 255;
     }
   }
@@ -181,26 +152,13 @@ function getMarbleTexture(isWalkway = false) {
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-
-  // 4.8m x 4.8m patch repeat:
-  // Main hall: 40m x 30m -> 40/4.8 ≈ 8.333, 30/4.8 = 6.25
-  // Walkway: 4.0m x 29.2m -> 4.0/4.8 ≈ 0.833, 29.2/4.8 ≈ 6.083
-  if (isWalkway) {
-    tex.repeat.set(4.0 / 4.8, 29.2 / 4.8);
-  } else {
-    tex.repeat.set(40 / 4.8, 30 / 4.8);
-  }
-
-  tex.anisotropy = isMobile ? 4 : 16;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 8;
   tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
 
-  if (isWalkway) {
-    _walkwayMarbleTex = tex;
-  } else {
-    _mainMarbleTex = tex;
-  }
-
+  _cachedFloorTex = tex;
   return tex;
 }

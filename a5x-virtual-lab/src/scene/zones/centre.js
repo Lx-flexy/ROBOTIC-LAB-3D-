@@ -1,5 +1,5 @@
 /**
- * zones/centre.js — Central tables, chairs, plants, and grounded contact shadows
+ * zones/centre.js — Central tables, chairs, plants, and non-interfering contact shadows
  */
 import * as THREE from 'three';
 import { box } from '../../utils/geometry.js';
@@ -7,15 +7,27 @@ import { M, C } from '../../utils/materials.js';
 import { createTable, createChair, createPlant } from '../props/furniture.js';
 
 export function buildCentre(scene) {
-  const shadowMat = M(0x000000, { transparent: true, opacity: 0.16, roughness: 1 });
-  const legShadowMat = M(0x000000, { transparent: true, opacity: 0.22, roughness: 1 });
+  // Use pure depthWrite: false materials for contact shadows so they NEVER cause sorting flicker
+  const shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.15,
+    depthWrite: false,
+  });
+  const legShadowMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.20,
+    depthWrite: false,
+  });
 
   // Two long tables running front-to-back
   [-6.5, 6.5].forEach(x => {
-    // 1. Soft Table Footprint Contact Shadow / AO on Floor (y = 0.052)
+    // 1. Soft Table Footprint Contact Shadow / AO on Floor (y = 0.054)
     const tableShadow = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 14.2), shadowMat);
     tableShadow.rotation.x = -Math.PI / 2;
-    tableShadow.position.set(x, 0.052, 2);
+    tableShadow.position.set(x, 0.054, 2);
+    tableShadow.renderOrder = 2;
     scene.add(tableShadow);
 
     // 2. Table Leg Darker Contact Pads (4 corners)
@@ -23,7 +35,8 @@ export function buildCentre(scene) {
     [[-lx, -lz], [lx, -lz], [-lx, lz], [lx, lz]].forEach(([a, b]) => {
       const legPad = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.24), legShadowMat);
       legPad.rotation.x = -Math.PI / 2;
-      legPad.position.set(x + a, 0.0525, 2 + b);
+      legPad.position.set(x + a, 0.0545, 2 + b);
+      legPad.renderOrder = 2;
       scene.add(legPad);
     });
 
@@ -39,14 +52,16 @@ export function buildCentre(scene) {
       // Inner chair & contact shadow
       const cPad1 = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), shadowMat);
       cPad1.rotation.x = -Math.PI / 2;
-      cPad1.position.set(x - 3, 0.052, z);
+      cPad1.position.set(x - 3, 0.054, z);
+      cPad1.renderOrder = 2;
       scene.add(cPad1);
       createChair(scene, x - 3, z, -Math.PI / 2);
 
       // Outer chair & contact shadow
       const cPad2 = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.55), shadowMat);
       cPad2.rotation.x = -Math.PI / 2;
-      cPad2.position.set(x + 3, 0.052, z);
+      cPad2.position.set(x + 3, 0.054, z);
+      cPad2.renderOrder = 2;
       scene.add(cPad2);
       createChair(scene, x + 3, z, Math.PI / 2);
     }
@@ -57,7 +72,7 @@ export function buildCentre(scene) {
     }
   });
 
-  // Floor cable boxes (dark grey strips resting cleanly on marble floor at y = 0.065)
+  // Floor cable boxes (dark grey strips resting cleanly on marble floor at y = 0.07)
   [-6.5, 6.5].forEach(x => {
     box(scene, 1.2, 0.04, 0.4, M(0x333333), x, 0.07, -2);
     box(scene, 1.2, 0.04, 0.4, M(0x333333), x, 0.07, 6);
