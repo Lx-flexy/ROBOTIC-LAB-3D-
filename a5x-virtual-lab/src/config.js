@@ -90,10 +90,10 @@ export const ZONES = [
 ];
 
 export const HOTSPOTS = [
-  { id: 'printer', pos: [-12.4, 1.5, -14.1], title: '3D Printer', desc: 'Bambu Lab style FDM printer. Prints prototypes from PLA, PETG and TPU filament in multiple colours.', zone: 'printing' },
-  { id: 'spools', pos: [-11, 3, -14.5], title: 'Filament Spools', desc: 'Six colours of 1.75mm filament: orange, white, blue, black, yellow and red. Each spool holds 1 kg.', zone: 'printing' },
+  { id: 'printer', pos: [-11.0, 1.4, -14.1], title: 'Hero 3D Printer', desc: 'Precision FDM desktop 3D printer with multi-filament AMS unit, heated bed, and automatic bed levelling.', zone: 'printing' },
+  { id: 'spools', pos: [-13.1, 2.7, -14.6], title: 'Filament Spools', desc: 'Six colours of 1.75mm PLA filament: orange, white, blue, black, yellow and red mounted on the tool rack.', zone: 'printing' },
   { id: 'roboarm', pos: [19.38, 1.3, -5.1], title: 'Robotic Arm', desc: 'A 6-axis desktop robotic arm for pick-and-place, soldering assist, and sorting tasks.', zone: 'roboticslab' },
-  { id: 'drone', pos: [-15.5, 3.5, 1], title: 'Test Drone', desc: 'A micro quadcopter used for indoor drone piloting tests and obstacle course navigation.', zone: 'testing' },
+  { id: 'drone', pos: [-12.5, 2.2, 10.0], title: 'Test Drone', desc: 'A micro quadcopter used for indoor drone piloting tests and obstacle course navigation.', zone: 'testing' },
   { id: 'soccerfield', pos: [-15.5, 0.2, -5.6], title: 'Robo Soccer Field', desc: 'A regulation mini soccer pitch where autonomous bots compete in 2v2 matches.', zone: 'testing' },
   { id: 'smarttv', pos: [19.7, 2.8, -5.1], title: 'Smart Display', desc: 'Interactive 75″ smart TV for live robotics, coding, and STEM learning pathways.', zone: 'roboticslab' },
   { id: 'racetrack', pos: [-15.5, 0.1, 0.3], title: 'Robo Race Track', desc: 'Dark circuit with red/white dashed racing line. Robots compete for fastest lap time.', zone: 'testing' },

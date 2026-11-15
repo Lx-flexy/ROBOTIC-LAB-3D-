@@ -484,7 +484,7 @@ export function createFrontWallDecor(scene) {
   createFrontLeftPaint(scene);
   createFrontRightPaint(scene);
   createFrontMascot(scene);
-  createLeftWallMascot(scene);
+  // createLeftWallMascot removed so mascot does not cover the Testing Zone wall/tagline
   createFrontWallFarRight(scene);
   createFrontWallFarLeft(scene);
 }

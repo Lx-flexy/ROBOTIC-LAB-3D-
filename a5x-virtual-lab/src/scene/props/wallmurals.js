@@ -329,94 +329,164 @@ const ico = {
 };
 
 /* ═══════════════════════════════════════════════════════════════════
-   1. TESTING ZONE MURAL  — Reference-matched layout
-   Left wall (x = -19.74), no furniture → full-height banner OK
-   y = 3.2 centre, H = 4.8m, W = 13m
-   Canvas: 2048 × 756  (AR ≈ 2.71)
+   1. TESTING ZONE MURAL — Full wall repaint (reference-matched)
+   ─────────────────────────────────────────────────────────────────
+   Wall: left wall, x = -19.74, faces +X (ry = PI/2)
+   Mesh: PlaneGeometry(19, 6)  →  covers wall z=-5 to +14, y=0 to 6
+   Canvas: 4096 × 1280  (AR = 3.2)
+   
+   FIXES applied:
+   • No white board feel — painted directly on cream wall bg
+   • Logo top-left, NOT overlapping pill/cards
+   • Cards: equal width, equal gaps, pill label at bottom with padding
+   • Chevrons: 3 bold >>> after pill
+   • Tagline on the right side wall via testing.js (not on mural)
+   • No lonely dot
 ═══════════════════════════════════════════════════════════════════ */
 export function createTestingZoneMural(scene) {
-  const W = 2048, H = 756;
+  const W = 4096, H = 1280;
   const tex = canvasTex(W, H, (g) => {
-    // ── CREAM BACKGROUND ──
-    g.fillStyle = '#fff8f0'; g.fillRect(0, 0, W, H);
 
-    // ── HEADER: navy diagonal slab (left ~40%) + orange chevron strip ──
-    const bandH = 210;
+    // ── 1. BASE: warm cream/peach wall colour (matches Three.js wall) ──
+    g.fillStyle = '#f5e6d0';
+    g.fillRect(0, 0, W, H);
 
-    // Navy left parallelogram
+    // ── 2. BIG DIAGONAL NAVY STRIPE (top-left → bottom-right) ──
+    // Large navy parallelogram sweeping from left edge to ~55% width
     g.fillStyle = '#14284b';
     g.beginPath();
-    g.moveTo(0, 0); g.lineTo(W * 0.44, 0);
-    g.lineTo(W * 0.33, bandH); g.lineTo(0, bandH);
-    g.closePath(); g.fill();
+    g.moveTo(0, 0);
+    g.lineTo(W * 0.52, 0);
+    g.lineTo(W * 0.38, H);
+    g.lineTo(0, H);
+    g.closePath();
+    g.fill();
 
-    // Orange diagonal stripe edge
+    // ── 3. ORANGE DIAGONAL STRIPE (edge between navy and cream) ──
     g.fillStyle = '#ff7a00';
     g.beginPath();
-    g.moveTo(W * 0.44, 0); g.lineTo(W * 0.47, 0);
-    g.lineTo(W * 0.36, bandH); g.lineTo(W * 0.33, bandH);
-    g.closePath(); g.fill();
+    g.moveTo(W * 0.52, 0);
+    g.lineTo(W * 0.555, 0);
+    g.lineTo(W * 0.415, H);
+    g.lineTo(W * 0.38, H);
+    g.closePath();
+    g.fill();
 
-    // Blue horizontal top bar (full width, thin)
+    // ── 4. ORANGE BOTTOM STRIP ──
+    g.fillStyle = '#ff7a00';
+    g.fillRect(0, H - 56, W, 56);
+
+    // ── 5. SRI LOGO — top-left corner, inside navy area, well clear of pill ──
+    // Positioned at x=170, y=200 (well above and left of the pill)
+    sriLogo(g, 200, 220, 110, '#fff');
+
+    // ── 6. "TESTING ZONE" PILL — navy rounded rect, to the RIGHT of logo ──
+    const pillX = 460, pillY = 60, pillW = 820, pillH = 230, pillR = 36;
     g.fillStyle = '#14284b';
-    g.fillRect(0, 0, W, 10);
-
-    // Orange bottom bar of header
-    g.fillStyle = '#ff7a00'; g.fillRect(0, bandH, W, 12);
-
-    // ── SRI LOGO — centred in navy slab (white text on dark bg) ──
-    // Logo is 140px tall; slab centre ~x=160, y=bandH/2
-    const logoX = 148, logoY = bandH * 0.46, logoR = 52;
-    sriLogo(g, logoX, logoY, logoR, '#fff');
-
-    // White vertical divider after logo
-    g.strokeStyle = 'rgba(255,255,255,0.45)'; g.lineWidth = 3;
-    g.beginPath(); g.moveTo(240, 20); g.lineTo(240, bandH - 20); g.stroke();
-
-    // ── "Testing Zone" dark navy pill (right of divider) ──
-    g.fillStyle = '#14284b';
-    g.beginPath(); g.roundRect(258, 32, 490, 148, 20); g.fill();
-    // "Testing Zone" in white inside pill
+    g.beginPath();
+    g.roundRect(pillX, pillY, pillW, pillH, pillR);
+    g.fill();
+    // White text
     g.fillStyle = '#fff';
-    g.font = `bold 80px 'Segoe UI', sans-serif`;
-    g.textAlign = 'left'; g.textBaseline = 'middle';
-    g.fillText('Testing Zone', 278, 32 + 74);
+    g.font = `900 148px 'Segoe UI', sans-serif`;
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+    g.fillText('Testing Zone', pillX + 48, pillY + pillH / 2);
 
-    // ── 3 orange chevron arrows after pill ──
-    const chevX0 = 762, chevY0 = 36, chevH2 = 68;
-    [0, 46, 92].forEach(dx => {
-      g.strokeStyle = '#ff7a00'; g.lineWidth = 14; g.lineCap = 'round';
+    // ── 7. THREE ORANGE CHEVRONS >>> after pill ──
+    const chBase = pillX + pillW + 32;
+    const chMid  = pillY + pillH / 2;
+    const chH    = pillH * 0.55;
+    [0, 68, 136].forEach(dx => {
+      g.strokeStyle = '#ff7a00';
+      g.lineWidth   = 22;
+      g.lineCap     = 'round';
+      g.lineJoin    = 'round';
       g.beginPath();
-      g.moveTo(chevX0 + dx, chevY0);
-      g.lineTo(chevX0 + dx + 42, chevY0 + chevH2);
-      g.lineTo(chevX0 + dx, chevY0 + chevH2 * 2);
+      g.moveTo(chBase + dx,        chMid - chH / 2);
+      g.lineTo(chBase + dx + 56,   chMid);
+      g.lineTo(chBase + dx,        chMid + chH / 2);
       g.stroke();
     });
 
-    // ── 6 ICON CARDS ──
-    const cards = [
-      { l: 'Robo Race',      f: ico.flag   },
-      { l: 'Robo Soccer',    f: ico.soccer },
-      { l: 'Line Following', f: ico.line   },
-      { l: 'Obstacle Test',  f: ico.cone   },
-      { l: 'Drone Test',     f: ico.drone  },
-      { l: 'Project Testing',f: ico.gear   },
+    // ── 8. SIX ICON CARDS — equal width, equal gaps, navy pill label ──
+    // Card row starts below header, centred across the full canvas width
+    const CARDS = [
+      { l: 'Robo Race',       f: ico.flag   },
+      { l: 'Robo Soccer',     f: ico.soccer },
+      { l: 'Line Following',  f: ico.line   },
+      { l: 'Obstacle Test',   f: ico.cone   },
+      { l: 'Drone Test',      f: ico.drone  },
+      { l: 'Project Testing', f: ico.gear   },
     ];
-    const cW = 290, cH = 320, gap = 22;
-    const totalW = cards.length * (cW + gap) - gap;
-    let cx = (W - totalW) / 2 + cW / 2;
-    const cy = bandH + 12 + (H - bandH - 12) / 2;
-    cards.forEach(({ l, f }) => {
-      iconCard(g, cx, cy, cW, cH, f, l);
-      cx += cW + gap;
+
+    // Fixed card dimensions
+    const CW  = 540;   // card width  (px)
+    const CH  = 580;   // card height (px)
+    const CGP = 42;    // gap between cards
+    const totalW = CARDS.length * CW + (CARDS.length - 1) * CGP;
+    const startX = (W - totalW) / 2;
+    const cardTop = 360;  // top of card row
+    const CR  = 28;    // corner radius
+
+    CARDS.forEach(({ l, f }, i) => {
+      const cx = startX + i * (CW + CGP);
+      const cy = cardTop;
+
+      // Card background — wall colour (blends with cream bg)
+      g.fillStyle = '#f5e6d0';
+      g.beginPath(); g.roundRect(cx, cy, CW, CH, CR); g.fill();
+
+      // Orange border stroke (3 px)
+      g.strokeStyle = '#ff7a00';
+      g.lineWidth = 7;
+      g.beginPath(); g.roundRect(cx, cy, CW, CH, CR); g.stroke();
+
+      // Icon centred in upper 65% of card
+      const iconCX = cx + CW / 2;
+      const iconCY = cy + CH * 0.38;
+      const iconS  = CW * 0.34;
+      f(g, iconCX, iconCY, iconS);
+
+      // Navy pill label — bottom 22% of card, with 20px side margin
+      const lPadH = 72;
+      const lPadSide = 20;
+      const lY = cy + CH - lPadH - 20;
+      g.fillStyle = '#14284b';
+      g.beginPath();
+      g.roundRect(cx + lPadSide, lY, CW - lPadSide * 2, lPadH, lPadH / 2);
+      g.fill();
+
+      // White label text — sized to fit, never touch edges
+      const maxFS = 36;
+      g.fillStyle = '#fff';
+      g.font = `bold ${maxFS}px 'Segoe UI', sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      // Shrink font if too wide
+      let fs = maxFS;
+      while (g.measureText(l).width > CW - lPadSide * 2 - 24 && fs > 22) {
+        fs -= 2;
+        g.font = `bold ${fs}px 'Segoe UI', sans-serif`;
+      }
+      g.fillText(l, cx + CW / 2, lY + lPadH / 2);
     });
   });
 
+  // Material: matte paint look (roughness 0.9, metalness 0)
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    roughness: 0.9,
+    metalness: 0,
+  });
+  tex.anisotropy = 4; // sharper at angles
+
+  // Mesh: covers y=0.1 → y=6.1  (full wall height), z=-5 → z=+14 (13m span)
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(13, 4.8),
-    new THREE.MeshBasicMaterial({ map: tex })
+    new THREE.PlaneGeometry(19, 6),
+    mat
   );
-  mesh.position.set(-19.74, 3.2, -4);
+  mesh.position.set(-19.74, 3.1, -1);  // centre z=-1 → spans -1±9.5 = z=-10.5 to +8.5
   mesh.rotation.y = Math.PI / 2;
   scene.add(mesh);
 }
@@ -427,72 +497,305 @@ export function createTestingZoneMural(scene) {
    Sits HIGH on wall: y = 4.4, H = 2.2m (bottom edge ≈ y 3.3)
    Canvas: 2048 × 480  (AR ≈ 4.27)
 ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   2. 3D PRINTING ZONE MURAL — Full painted wall (reference-matched)
+   ─────────────────────────────────────────────────────────────────
+   Wall: back wall, centered at x = -11.0, z = -14.78 (faces +Z)
+   Mesh: PlaneGeometry(8.5, 5.76)  →  spans x=-15.25 to -6.75, y=0.12 to 5.88
+   Canvas: 4096 × 2764  (AR = 1.48)
+   
+   MATCHES REFERENCE IMAGE:
+   • Warm peach/cream wall background (exact C.cream #fff1e3)
+   • Top-left corner: painted orange triangle
+   • Top-left: SRI logo, thin orange vertical divider
+   • Navy hexagon outline badge with 3D printer nozzle head
+   • Bold navy title: "3D Printing" / "Zone" on two lines + orange brush-stroke underline
+   • Painted process row (NO cards/boxes):
+     [Monitor] Design > [Layers] Slice > [Nozzle] Print > [Cube] Prototype
+   • Right side: painted navy diagonal panel with stacked tagline:
+     "Create / Print / Test / Iterate" in bold white + orange underline stroke
+   • Matte paint standard material (roughness 0.85, metalness 0)
+═══════════════════════════════════════════════════════════════════ */
 export function create3DPrintingMural(scene) {
-  const W = 2048, H = 480;
+  const W = 4096, H = 2764;
   const tex = canvasTex(W, H, (g) => {
-    g.fillStyle = '#fff8f0'; g.fillRect(0, 0, W, H);
+    // ── 1. Base wall colour: warm peach/cream (matches 3D wall exactly) ──
+    g.fillStyle = '#fff1e3';
+    g.fillRect(0, 0, W, H);
 
-    // Left diagonal accents
+    // ── 2. Top-left corner: painted orange triangle ──
     g.fillStyle = '#ff7a00';
-    g.beginPath(); g.moveTo(0,0); g.lineTo(80,0); g.lineTo(0,H); g.closePath(); g.fill();
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(760, 0);
+    g.lineTo(0, 760);
+    g.closePath();
+    g.fill();
+
+    // ── 3. Right side: large painted navy diagonal panel ──
     g.fillStyle = '#14284b';
-    g.beginPath(); g.moveTo(80,0); g.lineTo(130,0); g.lineTo(50,H); g.lineTo(0,H); g.closePath(); g.fill();
+    g.beginPath();
+    g.moveTo(2780, 0);
+    g.lineTo(W, 0);
+    g.lineTo(W, 2050);
+    g.lineTo(2100, H);
+    g.lineTo(1980, 1600);
+    g.closePath();
+    g.fill();
 
-    // Right diagonal accents
-    g.fillStyle = '#ff7a00';
-    g.beginPath(); g.moveTo(W,0); g.lineTo(W-80,0); g.lineTo(W,H); g.closePath(); g.fill();
+    // ── 4. Tagline on navy panel (stacked bold white text) ──
+    g.fillStyle = '#ffffff';
+    g.font = `900 136px 'Segoe UI', sans-serif`;
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+    const tagX = 3380;
+    const tagLines = ['Create', 'Print', 'Test', 'Iterate'];
+    tagLines.forEach((t, i) => {
+      g.fillText(t, tagX, 290 + i * 160);
+    });
+
+    // Orange brush-stroke underline beneath "Iterate"
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 18;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(tagX - 20, 840);
+    g.quadraticCurveTo(tagX + 240, 865, tagX + 500, 830);
+    g.stroke();
+
+    // ── 5. Top-left: SRI Logo ──
+    sriLogo(g, 580, 340, 95, '#14284b');
+
+    // ── 6. Thin orange vertical divider ──
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 7;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(940, 170);
+    g.lineTo(940, 520);
+    g.stroke();
+
+    // ── 7. Navy hexagon outline badge with 3D printer nozzle head ──
+    const hexCX = 1200, hexCY = 345, hexR = 150;
+    g.strokeStyle = '#14284b';
+    g.lineWidth = 14;
+    g.lineJoin = 'round';
+    g.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 - Math.PI / 6;
+      const px = hexCX + hexR * Math.cos(a);
+      const py = hexCY + hexR * Math.sin(a);
+      i === 0 ? g.moveTo(px, py) : g.lineTo(px, py);
+    }
+    g.closePath();
+    g.stroke();
+
+    // 3D printer nozzle icon inside hexagon
     g.fillStyle = '#14284b';
-    g.beginPath(); g.moveTo(W-80,0); g.lineTo(W-130,0); g.lineTo(W-50,H); g.lineTo(W,H); g.closePath(); g.fill();
+    g.strokeStyle = '#14284b';
+    g.lineWidth = 8;
+    g.lineCap = 'round';
+    // Top cross-rail
+    g.fillRect(hexCX - 65, hexCY - 60, 130, 20);
+    // Vertical neck
+    g.fillRect(hexCX - 22, hexCY - 40, 44, 45);
+    // Extruder cone nozzle
+    g.beginPath();
+    g.moveTo(hexCX - 32, hexCY + 5);
+    g.lineTo(hexCX + 32, hexCY + 5);
+    g.lineTo(hexCX + 6, hexCY + 50);
+    g.lineTo(hexCX - 6, hexCY + 50);
+    g.closePath();
+    g.fill();
+    // Build plate line below nozzle
+    g.fillRect(hexCX - 55, hexCY + 64, 110, 12);
 
-    // Orange bottom bar
-    g.fillStyle = '#ff7a00'; g.fillRect(0, H-12, W, 12);
+    // ── 8. Title: "3D Printing" / "Zone" (two lines) ──
+    const titleX = 1460;
+    g.fillStyle = '#14284b';
+    g.font = `900 136px 'Segoe UI', sans-serif`;
+    g.textAlign = 'left';
+    g.textBaseline = 'top';
+    g.fillText('3D Printing', titleX, 205);
+    g.fillText('Zone', titleX, 355);
 
-    // ── HEADER ROW (y: 20 → 200) ──
-    const pad = 160; // skip diagonal accent area
-    sriLogo(g, pad + 70, 100, 64);
+    // Orange brush-stroke underline under "Zone"
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 16;
+    g.lineCap = 'round';
+    g.beginPath();
+    g.moveTo(titleX, 510);
+    g.quadraticCurveTo(titleX + 450, 530, titleX + 880, 500);
+    g.stroke();
 
-    // Divider
-    g.strokeStyle = '#14284b'; g.lineWidth = 5;
-    g.beginPath(); g.moveTo(pad+185, 24); g.lineTo(pad+185, 188); g.stroke();
-
-    // Hex badge
-    hexBadge(g, pad+248, 100, 64, '3D');
-
-    // Zone name
-    txt(g, '3D Printing Zone', pad+360, 72, 68, '#14284b', 'left', 'top');
-
-    // Orange underline under title
-    g.fillStyle = '#ff7a00'; g.fillRect(pad+360, 150, 600, 6);
-
-    // Subtitle
-    txt(g, 'Design  ›  Slice  ›  Print  ›  Prototype', pad+360, 168, 30, '#14284b', 'left', 'top');
-
-    // Circuit decoration
-    circuit(g, W - 340, 70, 1);
-
-    // ── FLOW CARDS ──
+    // ── 9. Process Row: Design > Slice > Print > Prototype (Painted on wall) ──
+    // Direct wall paint — NO cards, NO background boxes
     const steps = [
-      { l:'Design',    f:ico.monitor },
-      { l:'Slice',     f:ico.layers },
-      { l:'Print',     f:ico.printer },
-      { l:'Prototype', f:ico.box },
+      {
+        l: 'Design',
+        draw: (cx, cy) => {
+          // Monitor outline with 3D cube inside
+          g.strokeStyle = '#14284b';
+          g.lineWidth = 7;
+          g.beginPath();
+          g.roundRect(cx - 60, cy - 55, 120, 84, 10);
+          g.stroke();
+          // Stand
+          g.beginPath();
+          g.moveTo(cx, cy + 29); g.lineTo(cx, cy + 50);
+          g.moveTo(cx - 35, cy + 50); g.lineTo(cx + 35, cy + 50);
+          g.stroke();
+          // Isometric cube inside monitor
+          const cw = 26;
+          g.beginPath();
+          // Top diamond
+          g.moveTo(cx, cy - 30); g.lineTo(cx + cw, cy - 18);
+          g.lineTo(cx, cy - 6); g.lineTo(cx - cw, cy - 18);
+          g.closePath(); g.stroke();
+          // Left face
+          g.beginPath();
+          g.moveTo(cx - cw, cy - 18); g.lineTo(cx, cy - 6);
+          g.lineTo(cx, cy + 18); g.lineTo(cx - cw, cy + 6);
+          g.closePath(); g.stroke();
+          // Right face
+          g.beginPath();
+          g.moveTo(cx + cw, cy - 18); g.lineTo(cx, cy - 6);
+          g.lineTo(cx, cy + 18); g.lineTo(cx + cw, cy + 6);
+          g.closePath(); g.stroke();
+        }
+      },
+      {
+        l: 'Slice',
+        draw: (cx, cy) => {
+          // 3 stacked isometric slice layers
+          g.strokeStyle = '#14284b';
+          g.lineWidth = 7;
+          [-28, 0, 28].forEach((dy, idx) => {
+            if (idx === 1) g.fillStyle = 'rgba(255,122,0,0.18)';
+            const lw = 62, lh = 22;
+            g.beginPath();
+            g.moveTo(cx, cy + dy - lh);
+            g.lineTo(cx + lw, cy + dy);
+            g.lineTo(cx, cy + dy + lh);
+            g.lineTo(cx - lw, cy + dy);
+            g.closePath();
+            g.stroke();
+            if (idx === 1) g.fill();
+          });
+        }
+      },
+      {
+        l: 'Print',
+        draw: (cx, cy) => {
+          // 3D printer nozzle extruding filament onto layer
+          g.fillStyle = '#14284b';
+          g.strokeStyle = '#14284b';
+          g.lineWidth = 7;
+          // Gantry bar
+          g.fillRect(cx - 55, cy - 50, 110, 16);
+          // Block
+          g.fillRect(cx - 20, cy - 34, 40, 36);
+          // Cone nozzle
+          g.beginPath();
+          g.moveTo(cx - 25, cy + 2);
+          g.lineTo(cx + 25, cy + 2);
+          g.lineTo(cx + 6, cy + 34);
+          g.lineTo(cx - 6, cy + 34);
+          g.closePath();
+          g.fill();
+          // Extruded bead
+          g.strokeStyle = '#ff7a00';
+          g.lineWidth = 8;
+          g.beginPath();
+          g.moveTo(cx, cy + 34);
+          g.lineTo(cx, cy + 48);
+          g.stroke();
+          // Bed line
+          g.fillStyle = '#14284b';
+          g.fillRect(cx - 50, cy + 48, 100, 10);
+        }
+      },
+      {
+        l: 'Prototype',
+        draw: (cx, cy) => {
+          // Large isometric 3D prototype cube
+          g.strokeStyle = '#14284b';
+          g.lineWidth = 7;
+          const s = 48;
+          // Top diamond
+          g.beginPath();
+          g.moveTo(cx, cy - s);
+          g.lineTo(cx + s * 0.9, cy - s * 0.45);
+          g.lineTo(cx, cy + s * 0.1);
+          g.lineTo(cx - s * 0.9, cy - s * 0.45);
+          g.closePath();
+          g.stroke();
+          // Left face
+          g.beginPath();
+          g.moveTo(cx - s * 0.9, cy - s * 0.45);
+          g.lineTo(cx, cy + s * 0.1);
+          g.lineTo(cx, cy + s * 1.0);
+          g.lineTo(cx - s * 0.9, cy + s * 0.45);
+          g.closePath();
+          g.stroke();
+          // Right face (orange fill tint)
+          g.fillStyle = 'rgba(255,122,0,0.18)';
+          g.beginPath();
+          g.moveTo(cx + s * 0.9, cy - s * 0.45);
+          g.lineTo(cx, cy + s * 0.1);
+          g.lineTo(cx, cy + s * 1.0);
+          g.lineTo(cx + s * 0.9, cy + s * 0.45);
+          g.closePath();
+          g.fill();
+          g.stroke();
+        }
+      }
     ];
-    const cW=220, cH=200, arrowW=52;
-    const totalW = steps.length*cW + (steps.length-1)*arrowW;
-    let cx = (W - totalW)/2 + cW/2;
-    const cy = 350;
-    steps.forEach(({ l, f }, i) => {
-      iconCard(g, cx, cy, cW, cH, f, l);
-      if (i < steps.length-1) arrowRight(g, cx + cW/2 + arrowW/2, cy, 20);
-      cx += cW + arrowW;
+
+    const stepCenters = [960, 1450, 1940, 2430];
+    const stepY = 760;
+
+    steps.forEach((step, idx) => {
+      const scx = stepCenters[idx];
+      // Draw icon
+      step.draw(scx, stepY);
+      // Label in bold navy text below icon
+      g.fillStyle = '#14284b';
+      g.font = `900 52px 'Segoe UI', sans-serif`;
+      g.textAlign = 'center';
+      g.textBaseline = 'top';
+      g.fillText(step.l, scx, stepY + 74);
+
+      // Orange chevron arrow > between steps
+      if (idx < steps.length - 1) {
+        const arrX = (stepCenters[idx] + stepCenters[idx + 1]) / 2;
+        g.strokeStyle = '#ff7a00';
+        g.lineWidth = 10;
+        g.lineCap = 'round';
+        g.lineJoin = 'round';
+        g.beginPath();
+        g.moveTo(arrX - 16, stepY - 24);
+        g.lineTo(arrX + 16, stepY);
+        g.lineTo(arrX - 16, stepY + 24);
+        g.stroke();
+      }
     });
   });
 
+  // Material: matte paint standard material (roughness 0.85, metalness 0)
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    roughness: 0.85,
+    metalness: 0,
+  });
+  tex.anisotropy = 4;
+
+  // Mesh: full wall height (y=0.12 to 5.88, h=5.76), 8.5m wide
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(10.0, 2.3),
-    new THREE.MeshBasicMaterial({ map: tex })
+    new THREE.PlaneGeometry(8.5, 5.76),
+    mat
   );
-  mesh.position.set(-11, 4.4, -14.73);
+  mesh.position.set(-11.0, 3.0, -14.78);
   scene.add(mesh);
 }
 

@@ -9,53 +9,625 @@ import { createPrinter, createDrone, createCar, createRobot, createBook, createM
 import { BRAND_SHORT } from '../../config.js';
 import { create3DPrintingMural, createCodingZoneMural, createMainWallMural } from '../props/wallmurals.js';
 
+/* ═══════════════════════════════════════════════════════════════════
+   3D PRINTING ZONE PROPS (Reference-matched)
+   • Hero 3D Printer (generic Bambu-style with AMS spool unit & vase)
+   • Filament Spool Shelf (6 thick 3D hollow spools on metal rod)
+   • Pegboard (dark perforated board with 2 pliers, 4 screwdrivers,
+     ruler, caliper, orange tool cup with pens)
+   • Table Props (cutting mat, astronaut, rocket, gear, temple, orange parts)
+   • Right Open Shelving Unit (wood+black metal, bust, orange vase,
+     chess rook, truss bridge, yellow truck, clear storage boxes)
+   • Single task chair (black with vibrant orange seat cushion)
+   • Full-sized corner floor plant
+═══════════════════════════════════════════════════════════════════ */
+
+/** Hero 3D Printer (generic modern desktop FDM printer) */
+function createHero3DPrinter(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const whiteMat = M(0xf0f0f3, { roughness: 0.35, metalness: 0.1 });
+  const blackMat = M(0x1a1a1d, { roughness: 0.5, metalness: 0.5 });
+  const silverMat = M(0xd0d0d5, { roughness: 0.2, metalness: 0.8 });
+  const darkGlassMat = M(0x222228, { roughness: 0.1, transparent: true, opacity: 0.45 });
+
+  // 1. Base enclosure
+  box(g, 0.96, 0.14, 0.76, whiteMat, 0, 0.07, 0);
+  box(g, 0.90, 0.02, 0.70, blackMat, 0, 0.145, 0); // top rim
+  // Rubber feet
+  [[-0.42, -0.32], [0.42, -0.32], [-0.42, 0.32], [0.42, 0.32]].forEach(([fx, fz]) => {
+    cyl(g, 0.035, 0.035, 0.02, blackMat, fx, 0.01, fz, 10);
+  });
+
+  // 2. Heated build platform & spring steel sheet
+  box(g, 0.54, 0.025, 0.54, blackMat, 0, 0.165, -0.02);
+  box(g, 0.50, 0.010, 0.50, M(0x2c2c30, { roughness: 0.7 }), 0, 0.18, -0.02); // textured flex sheet
+
+  // 3. Orange spiral printed vase on build plate (animated spinning object)
+  const vasePoints = [];
+  for (let i = 0; i <= 24; i++) {
+    const t = i / 24;
+    const r = 0.055 + 0.065 * Math.sin(t * Math.PI) + 0.025 * Math.sin(t * Math.PI * 3.5);
+    vasePoints.push(new THREE.Vector2(r, t * 0.34));
+  }
+  const vaseGeom = new THREE.LatheGeometry(vasePoints, 20);
+  const vaseMat = M(0xff7a00, { roughness: 0.25, metalness: 0.15 });
+  const printObj = new THREE.Mesh(vaseGeom, vaseMat);
+  printObj.position.set(0, 0.185, -0.02);
+  g.add(printObj);
+
+  // 4. Twin Gantry Uprights & Top Crossbar
+  [-0.42, 0.42].forEach(gx => {
+    box(g, 0.07, 0.96, 0.08, blackMat, gx, 0.62, -0.22);
+    // Silver lead screw inside each gantry post
+    cyl(g, 0.010, 0.010, 0.90, silverMat, gx + (gx > 0 ? -0.045 : 0.045), 0.62, -0.22, 10);
+  });
+  // Top crossbeam
+  box(g, 0.94, 0.07, 0.08, blackMat, 0, 1.10, -0.22);
+
+  // 5. Horizontal X-axis linear rail & guide rods
+  cyl(g, 0.008, 0.008, 0.84, silverMat, 0, 0.58, -0.18, 10).rotation.z = Math.PI / 2;
+  cyl(g, 0.008, 0.008, 0.84, silverMat, 0, 0.64, -0.18, 10).rotation.z = Math.PI / 2;
+
+  // 6. Extruder Toolhead Carriage
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, 0.61, -0.18);
+  box(headGroup, 0.15, 0.17, 0.15, whiteMat, 0, 0, 0); // white housing
+  box(headGroup, 0.09, 0.09, 0.02, blackMat, 0, 0, 0.08); // fan grill
+  // Black heatsink fins
+  box(headGroup, 0.06, 0.08, 0.06, blackMat, 0, -0.08, 0);
+  // Brass nozzle tip pointing directly at the orange printed vase
+  cyl(headGroup, 0.018, 0.004, 0.03, M(0xd4af37, { metalness: 0.9, roughness: 0.2 }), 0, -0.13, 0, 12);
+  g.add(headGroup);
+
+  // 7. AMS Multi-Color Spool Unit on top of gantry
+  const amsY = 1.14;
+  box(g, 0.76, 0.09, 0.32, blackMat, 0, amsY + 0.045, -0.22);
+  // Smoked transparent curved hood
+  const hoodGeom = new THREE.CylinderGeometry(0.14, 0.14, 0.74, 16, 1, false, 0, Math.PI);
+  const hood = new THREE.Mesh(hoodGeom, darkGlassMat);
+  hood.position.set(0, amsY + 0.09, -0.22);
+  hood.rotation.z = Math.PI / 2;
+  hood.rotation.x = -Math.PI / 2;
+  g.add(hood);
+
+  // 4 mini spools inside AMS: Orange, White, Blue, Black
+  const amsColors = [0xff7a00, 0xffffff, 0x2563eb, 0x1f1f23];
+  amsColors.forEach((col, idx) => {
+    const sx = -0.26 + idx * 0.175;
+    // Spool body
+    const sp = cyl(g, 0.085, 0.085, 0.045, M(col, { roughness: 0.4 }), sx, amsY + 0.13, -0.22, 16);
+    sp.rotation.z = Math.PI / 2;
+    // Flanges
+    [-0.025, 0.025].forEach(flangeOffset => {
+      const fl = cyl(g, 0.095, 0.095, 0.005, blackMat, sx + flangeOffset, amsY + 0.13, -0.22, 16);
+      fl.rotation.z = Math.PI / 2;
+    });
+    // PTFE guide tube curving down towards printhead
+    const tubeCurve = new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(sx, amsY + 0.05, -0.16),
+      new THREE.Vector3(sx * 0.5, 0.85, -0.12),
+      new THREE.Vector3(0, 0.69, -0.18)
+    );
+    const tubeGeom = new THREE.TubeGeometry(tubeCurve, 12, 0.004, 6, false);
+    g.add(new THREE.Mesh(tubeGeom, M(0xffffff, { transparent: true, opacity: 0.75 })));
+  });
+
+  // 8. Angled Touchscreen Display (front-right of base)
+  const screenGroup = new THREE.Group();
+  screenGroup.position.set(0.36, 0.09, 0.36);
+  screenGroup.rotation.x = -0.65; // ~37° angle up
+  box(screenGroup, 0.20, 0.14, 0.025, blackMat, 0, 0, 0);
+
+  const screenTex = canvasTex(256, 180, (ctx, sw, sh) => {
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, sw, sh);
+    // Header
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 20px monospace';
+    ctx.fillText('PRINTING: 78%', 16, 32);
+    // Circular progress ring
+    ctx.strokeStyle = '#ff7a00';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(sw / 2, sh / 2 + 10, 38, 0, Math.PI * 1.55);
+    ctx.stroke();
+    // Nozzle & Bed temps
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '16px monospace';
+    ctx.fillText('N: 220°C', 16, sh - 18);
+    ctx.fillText('B: 60°C', sw - 90, sh - 18);
+  });
+  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.12), Bm(0xffffff));
+  screenMesh.material.map = screenTex;
+  screenMesh.position.set(0, 0, 0.014);
+  screenGroup.add(screenMesh);
+  g.add(screenGroup);
+
+  // 9. Black cable chain / umbilical wire on left side
+  const wireCurve = new THREE.CubicBezierCurve3(
+    new THREE.Vector3(-0.43, 0.15, -0.18),
+    new THREE.Vector3(-0.48, 0.45, -0.18),
+    new THREE.Vector3(-0.48, 0.75, -0.18),
+    new THREE.Vector3(-0.10, 0.65, -0.18)
+  );
+  const wireGeom = new THREE.TubeGeometry(wireCurve, 16, 0.012, 8, false);
+  g.add(new THREE.Mesh(wireGeom, blackMat));
+
+  parent.add(g);
+  return printObj;
+}
+
+/** Filament Spool Shelf — wooden shelf with 6 thick 3D hollow spools on a metal rod */
+function createFilamentSpoolShelf(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const woodMat = M(C.wood, { roughness: 0.45 });
+  const bracketMat = M(0x1a1a1d, { roughness: 0.4, metalness: 0.7 });
+  const rodMat = M(0xd5d5da, { roughness: 0.25, metalness: 0.8 });
+
+  // 1. Natural wooden shelf board (1.8m x 0.04m x 0.30m)
+  box(g, 1.80, 0.04, 0.30, woodMat, 0, 0, 0);
+
+  // 2. Black steel L-brackets at ends
+  [-0.85, 0.85].forEach(bx => {
+    // Horizontal arm under shelf
+    box(g, 0.03, 0.025, 0.28, bracketMat, bx, -0.03, 0);
+    // Vertical wall bracket extending up to hold rod and down to anchor to wall
+    box(g, 0.03, 0.36, 0.025, bracketMat, bx, 0.14, -0.13);
+  });
+
+  // 3. Horizontal steel rod running through all spools
+  const rod = cyl(g, 0.014, 0.014, 1.76, rodMat, 0, 0.22, 0, 16);
+  rod.rotation.z = Math.PI / 2;
+
+  // 4. Six thick 3D hollow filament spools
+  // Colours: Orange, White, Blue, Black, Yellow, Red
+  const spoolColors = [
+    0xff7a00, // Orange
+    0xffffff, // White
+    0x2563eb, // Blue
+    0x202024, // Black
+    0xfacc15, // Yellow
+    0xdc2626  // Red
+  ];
+
+  spoolColors.forEach((col, i) => {
+    const sx = -0.65 + i * 0.26;
+    const spoolGroup = new THREE.Group();
+    spoolGroup.position.set(sx, 0.22, 0);
+
+    const filMat = M(col, { roughness: 0.45 });
+    const spoolRimMat = M(0x2a2a2e, { roughness: 0.4, metalness: 0.3 });
+
+    // Hollow filament winding cylinder (outer radius 0.17, inner hole radius 0.05, width 0.14)
+    // Three.js CylinderGeometry with hollow look via ring flanges and inner tube
+    const filDrum = cyl(spoolGroup, 0.17, 0.17, 0.14, filMat, 0, 0, 0, 20);
+    filDrum.rotation.z = Math.PI / 2;
+
+    // Two outer flange rings with large central viewing hole
+    [-0.075, 0.075].forEach(fx => {
+      // Outer rim ring
+      const flangeGeom = new THREE.RingGeometry(0.048, 0.19, 20);
+      const flange1 = new THREE.Mesh(flangeGeom, spoolRimMat);
+      flange1.position.set(fx, 0, 0);
+      flange1.rotation.y = Math.PI / 2;
+      spoolGroup.add(flange1);
+
+      // Flange thickness box
+      const edge = cyl(spoolGroup, 0.19, 0.19, 0.008, spoolRimMat, fx, 0, 0, 20);
+      edge.rotation.z = Math.PI / 2;
+    });
+
+    // Inner hollow core sleeve through which rod passes
+    const core = cyl(spoolGroup, 0.048, 0.048, 0.16, spoolRimMat, 0, 0, 0, 16);
+    core.rotation.z = Math.PI / 2;
+
+    g.add(spoolGroup);
+  });
+
+  parent.add(g);
+  return g;
+}
+
+/** Pegboard with hanging tools (2 pliers, 4 screwdrivers, ruler, caliper, orange tool cup) */
+function createPegboardWithTools(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const darkBoardMat = M(0x222226, { roughness: 0.65 });
+  const orangeHandleMat = M(0xff7a00, { roughness: 0.4 });
+  const blackGripMat = M(0x18181b, { roughness: 0.6 });
+  const steelMat = M(0xd2d2d8, { metalness: 0.85, roughness: 0.2 });
+
+  // 1. Pegboard base with hole pattern texture
+  const pegTex = canvasTex(512, 320, (ctx, pw, ph) => {
+    ctx.fillStyle = '#222226';
+    ctx.fillRect(0, 0, pw, ph);
+    // Grid of small round holes
+    ctx.fillStyle = '#0f0f13';
+    const step = 20;
+    for (let py = 16; py < ph; py += step) {
+      for (let px = 16; px < pw; px += step) {
+        ctx.beginPath();
+        ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+  const boardMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(1.80, 1.05, 0.025),
+    new THREE.MeshStandardMaterial({ map: pegTex, roughness: 0.65 })
+  );
+  g.add(boardMesh);
+
+  // 2. Hanging Tools on the Pegboard:
+  // (A) Two Pliers on left side
+  [-0.60, -0.42].forEach(px => {
+    const plierGroup = new THREE.Group();
+    plierGroup.position.set(px, 0.16, 0.025);
+    // Silver steel jaws & pivot
+    box(plierGroup, 0.04, 0.10, 0.016, steelMat, 0, 0.06, 0);
+    cyl(plierGroup, 0.018, 0.018, 0.02, steelMat, 0, 0.03, 0, 10);
+    // Two curved orange rubber handles
+    [-0.035, 0.035].forEach((hx, i) => {
+      const handle = box(plierGroup, 0.026, 0.15, 0.02, orangeHandleMat, hx, -0.06, 0);
+      handle.rotation.z = (i === 0 ? 0.16 : -0.16);
+      box(plierGroup, 0.028, 0.04, 0.022, blackGripMat, hx * 1.15, -0.11, 0);
+    });
+    g.add(plierGroup);
+  });
+
+  // (B) Four Screwdrivers side by side
+  [-0.20, -0.10, 0.0, 0.10].forEach((sx, i) => {
+    const sdGroup = new THREE.Group();
+    sdGroup.position.set(sx, 0.10, 0.025);
+    // Ribbed orange/black handle
+    const hColor = i % 2 === 0 ? orangeHandleMat : blackGripMat;
+    cyl(sdGroup, 0.024, 0.018, 0.13, hColor, 0, 0.08, 0, 10);
+    box(sdGroup, 0.030, 0.025, 0.030, orangeHandleMat, 0, 0.12, 0);
+    // Silver steel shaft & tip
+    const shaftLen = 0.18 + (i % 3) * 0.06;
+    cyl(sdGroup, 0.006, 0.006, shaftLen, steelMat, 0, -shaftLen / 2 + 0.02, 0, 8);
+    g.add(sdGroup);
+  });
+
+  // (C) Vertical Steel Ruler
+  const rulerGroup = new THREE.Group();
+  rulerGroup.position.set(0.28, 0.05, 0.025);
+  box(rulerGroup, 0.05, 0.44, 0.006, steelMat, 0, 0, 0);
+  g.add(rulerGroup);
+
+  // (D) Vernier Caliper
+  const caliperGroup = new THREE.Group();
+  caliperGroup.position.set(0.48, 0.05, 0.025);
+  // Main beam
+  box(caliperGroup, 0.032, 0.40, 0.008, steelMat, 0, 0, 0);
+  // Top measuring jaw
+  box(caliperGroup, 0.12, 0.03, 0.010, steelMat, -0.04, 0.18, 0);
+  // Sliding jaw
+  box(caliperGroup, 0.11, 0.04, 0.014, steelMat, -0.035, 0.04, 0.002);
+  g.add(caliperGroup);
+
+  // (E) Orange Pen & Tool Cup on bottom left
+  const cupGroup = new THREE.Group();
+  cupGroup.position.set(-0.62, -0.32, 0.06);
+  // Orange cup container
+  box(cupGroup, 0.20, 0.14, 0.10, orangeHandleMat, 0, 0, 0);
+  // Pens & tools sticking out
+  const penColors = [0xfacc15, 0x2563eb, 0x1f1f23, 0xff7a00];
+  penColors.forEach((pcol, pi) => {
+    const pen = cyl(cupGroup, 0.008, 0.008, 0.18, M(pcol), -0.06 + pi * 0.04, 0.08, 0, 8);
+    pen.rotation.z = (pi - 1.5) * 0.12;
+  });
+  g.add(cupGroup);
+
+  parent.add(g);
+  return g;
+}
+
+/** Tabletop printed models and cutting mat */
+function createTabletopProps(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const whiteMat = M(0xffffff, { roughness: 0.35 });
+  const orangeMat = M(0xff7a00, { roughness: 0.3 });
+  const greyMat = M(0x555560, { roughness: 0.4 });
+  const goldVisorMat = M(0xd97706, { roughness: 0.1, metalness: 0.85 });
+
+  // 1. Cutting Mat (dark teal-grey with white grid texture)
+  const matTex = canvasTex(512, 384, (ctx, mw, mh) => {
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, mw, mh);
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 1.5;
+    const step = 24;
+    for (let px = 12; px < mw; px += step) {
+      ctx.beginPath(); ctx.moveTo(px, 12); ctx.lineTo(px, mh - 12); ctx.stroke();
+    }
+    for (let py = 12; py < mh; py += step) {
+      ctx.beginPath(); ctx.moveTo(12, py); ctx.lineTo(mw - 12, py); ctx.stroke();
+    }
+    // Border
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(8, 8, mw - 16, mh - 16);
+  });
+  const cuttingMat = new THREE.Mesh(
+    new THREE.BoxGeometry(0.96, 0.008, 0.60),
+    new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.7 })
+  );
+  cuttingMat.position.set(-1.40, 0.004, 0.15);
+  g.add(cuttingMat);
+
+  // 2. White Miniature Astronaut Figurine
+  const astroGroup = new THREE.Group();
+  astroGroup.position.set(-1.95, 0.005, 0.15);
+  // Legs
+  box(astroGroup, 0.05, 0.10, 0.05, whiteMat, -0.035, 0.05, 0);
+  box(astroGroup, 0.05, 0.10, 0.05, whiteMat, 0.035, 0.05, 0);
+  // Torso & backpack
+  box(astroGroup, 0.11, 0.12, 0.08, whiteMat, 0, 0.15, 0);
+  box(astroGroup, 0.08, 0.10, 0.04, whiteMat, 0, 0.15, -0.055);
+  // Arms
+  box(astroGroup, 0.04, 0.10, 0.04, whiteMat, -0.07, 0.14, 0);
+  box(astroGroup, 0.04, 0.10, 0.04, whiteMat, 0.07, 0.14, 0);
+  // Helmet
+  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), whiteMat);
+  helmet.position.set(0, 0.25, 0);
+  astroGroup.add(helmet);
+  // Golden reflective visor
+  const visor = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8, 0, Math.PI), goldVisorMat);
+  visor.position.set(0, 0.25, 0.035);
+  visor.rotation.y = -Math.PI / 2;
+  astroGroup.add(visor);
+  g.add(astroGroup);
+
+  // 3. Bright Orange Toy Rocket
+  const rocketGroup = new THREE.Group();
+  rocketGroup.position.set(-1.60, 0.005, 0.22);
+  // Fuselage cylinder
+  cyl(rocketGroup, 0.042, 0.042, 0.18, orangeMat, 0, 0.09, 0, 14);
+  // Nose cone
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.10, 14), whiteMat);
+  nose.position.set(0, 0.23, 0);
+  rocketGroup.add(nose);
+  // 4 swept fins
+  for (let f = 0; f < 4; f++) {
+    const fin = box(rocketGroup, 0.015, 0.08, 0.05, orangeMat, 0, 0.04, 0.045);
+    fin.rotation.y = (Math.PI / 2) * f;
+  }
+  g.add(rocketGroup);
+
+  // 4. Grey Mechanical Gear
+  const gearGroup = new THREE.Group();
+  gearGroup.position.set(-1.25, 0.005, 0.12);
+  cyl(gearGroup, 0.08, 0.08, 0.03, greyMat, 0, 0.015, 0, 16);
+  // Center hole
+  cyl(gearGroup, 0.03, 0.03, 0.032, M(0x18181b), 0, 0.016, 0, 12);
+  // 8 Teeth around gear
+  for (let t = 0; t < 8; t++) {
+    const tooth = box(gearGroup, 0.03, 0.03, 0.035, greyMat, 0, 0.015, 0.085);
+    tooth.rotation.y = (Math.PI / 4) * t;
+  }
+  g.add(gearGroup);
+
+  // 5. White Classical Miniature Building / Temple
+  const templeGroup = new THREE.Group();
+  templeGroup.position.set(-0.85, 0.005, 0.08);
+  // Stepped foundation
+  box(templeGroup, 0.26, 0.02, 0.18, whiteMat, 0, 0.01, 0);
+  box(templeGroup, 0.24, 0.02, 0.16, whiteMat, 0, 0.03, 0);
+  // Row of mini columns
+  [-0.09, -0.045, 0, 0.045, 0.09].forEach(cx => {
+    cyl(templeGroup, 0.008, 0.008, 0.10, whiteMat, cx, 0.09, 0.06, 8);
+    cyl(templeGroup, 0.008, 0.008, 0.10, whiteMat, cx, 0.09, -0.06, 8);
+  });
+  // Architrave & pediment roof
+  box(templeGroup, 0.24, 0.02, 0.16, whiteMat, 0, 0.15, 0);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.06, 4), whiteMat);
+  roof.position.set(0, 0.19, 0);
+  roof.rotation.y = Math.PI / 4;
+  roof.scale.set(1.4, 1, 1);
+  templeGroup.add(roof);
+  g.add(templeGroup);
+
+  // 6. Orange Articulated Gear / Fidget Pieces on cutting mat
+  box(g, 0.08, 0.018, 0.08, orangeMat, -1.05, 0.015, 0.26);
+  box(g, 0.06, 0.018, 0.06, M(0x2563eb), -0.98, 0.015, 0.28);
+
+  parent.add(g);
+  return g;
+}
+
+/** Right Open Shelving Unit with 3D printed models & clear storage boxes */
+function createOpenShelfUnit(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const blackSteelMat = M(0x18181b, { metalness: 0.7, roughness: 0.35 });
+  const shelfWoodMat = M(C.wood, { roughness: 0.45 });
+  const whiteMat = M(0xffffff, { roughness: 0.35 });
+  const orangeMat = M(0xff7a00, { roughness: 0.3 });
+  const yellowMat = M(0xfacc15, { roughness: 0.35 });
+  const clearBoxMat = M(0xffffff, { transparent: true, opacity: 0.40, roughness: 0.2 });
+
+  const sW = 1.25, sD = 0.46, sH = 2.10;
+
+  // 1. Black steel tubular frame (4 uprights)
+  [[-sW / 2 + 0.02, -sD / 2 + 0.02], [sW / 2 - 0.02, -sD / 2 + 0.02],
+   [-sW / 2 + 0.02, sD / 2 - 0.02], [sW / 2 - 0.02, sD / 2 - 0.02]].forEach(([px, pz]) => {
+    box(g, 0.035, sH, 0.035, blackSteelMat, px, sH / 2, pz);
+  });
+  // Crossbeams at shelf levels
+  const shelfYs = [0.15, 0.65, 1.18, 1.70, 2.08];
+  shelfYs.forEach(sy => {
+    box(g, sW, 0.03, 0.025, blackSteelMat, 0, sy - 0.015, -sD / 2 + 0.02);
+    box(g, sW, 0.03, 0.025, blackSteelMat, 0, sy - 0.015, sD / 2 - 0.02);
+    box(g, 0.025, 0.03, sD - 0.04, blackSteelMat, -sW / 2 + 0.02, sy - 0.015, 0);
+    box(g, 0.025, 0.03, sD - 0.04, blackSteelMat, sW / 2 - 0.02, sy - 0.015, 0);
+    // Wooden shelf board
+    box(g, sW - 0.05, 0.032, sD - 0.05, shelfWoodMat, 0, sy + 0.016, 0);
+  });
+
+  // 2. Shelf Items:
+  // (A) Top Shelf (y = 1.73):
+  // • White classical bust sculpture
+  const bustGroup = new THREE.Group();
+  bustGroup.position.set(-0.35, 1.74, 0);
+  box(bustGroup, 0.12, 0.04, 0.12, whiteMat, 0, 0.02, 0); // pedestal
+  cyl(bustGroup, 0.07, 0.11, 0.14, whiteMat, 0, 0.11, 0, 12); // shoulders/torso
+  const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.065, 12, 10), whiteMat);
+  bustHead.position.set(0, 0.22, 0);
+  bustGroup.add(bustHead);
+  g.add(bustGroup);
+
+  // • Orange 3D printed lattice vase
+  const vasePoints2 = [];
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16;
+    const r = 0.045 + 0.045 * Math.sin(t * Math.PI) + 0.015 * Math.sin(t * Math.PI * 3);
+    vasePoints2.push(new THREE.Vector2(r, t * 0.26));
+  }
+  const vaseMesh2 = new THREE.Mesh(new THREE.LatheGeometry(vasePoints2, 16), orangeMat);
+  vaseMesh2.position.set(0.0, 1.74, 0);
+  g.add(vaseMesh2);
+
+  // • White chess rook
+  const rookGroup = new THREE.Group();
+  rookGroup.position.set(0.35, 1.74, 0);
+  cyl(rookGroup, 0.055, 0.065, 0.04, whiteMat, 0, 0.02, 0, 14); // base
+  cyl(rookGroup, 0.042, 0.050, 0.14, whiteMat, 0, 0.11, 0, 14); // column
+  cyl(rookGroup, 0.058, 0.050, 0.05, whiteMat, 0, 0.20, 0, 14); // crenelated top
+  g.add(rookGroup);
+
+  // (B) Middle Shelf (y = 1.21):
+  // • White geometric truss bridge cube
+  const trussGroup = new THREE.Group();
+  trussGroup.position.set(-0.32, 1.22, 0);
+  box(trussGroup, 0.18, 0.18, 0.18, M(0xffffff, { wireframe: true }), 0, 0.09, 0);
+  box(trussGroup, 0.16, 0.01, 0.16, whiteMat, 0, 0.005, 0);
+  box(trussGroup, 0.16, 0.01, 0.16, whiteMat, 0, 0.175, 0);
+  g.add(trussGroup);
+
+  // • Bright Yellow Toy Truck
+  const truckGroup = new THREE.Group();
+  truckGroup.position.set(0.20, 1.22, 0);
+  // Yellow chassis & cab
+  box(truckGroup, 0.26, 0.05, 0.14, yellowMat, 0, 0.045, 0);
+  box(truckGroup, 0.10, 0.08, 0.12, yellowMat, 0.06, 0.10, 0);
+  // Cab windshield
+  box(truckGroup, 0.01, 0.05, 0.10, M(0x38bdf8), 0.115, 0.105, 0);
+  // Yellow dump bucket
+  box(truckGroup, 0.14, 0.07, 0.13, yellowMat, -0.06, 0.095, 0);
+  // 4 Black chunky wheels
+  [[-0.08, -0.075], [0.08, -0.075], [-0.08, 0.075], [0.08, 0.075]].forEach(([wx, wz]) => {
+    const wheel = cyl(truckGroup, 0.035, 0.035, 0.024, blackSteelMat, wx, 0.035, wz, 12);
+    wheel.rotation.x = Math.PI / 2;
+  });
+  g.add(truckGroup);
+
+  // (C) Lower Shelves (y = 0.68 and 0.18):
+  // • Stacked clear/translucent storage organizer boxes with latch handles
+  [0.68, 0.18].forEach(by => {
+    [-0.30, 0.30].forEach(bx => {
+      // Clear plastic box
+      box(g, 0.52, 0.18, 0.38, clearBoxMat, bx, by + 0.11, 0);
+      // Grey lid rim
+      box(g, 0.54, 0.02, 0.40, M(0xd1d5db, { roughness: 0.4 }), bx, by + 0.21, 0);
+      // Orange latch handles
+      [-0.265, 0.265].forEach(lx => {
+        box(g, 0.015, 0.06, 0.08, orangeMat, bx + lx, by + 0.18, 0);
+      });
+      // Small colorful parts visible inside
+      box(g, 0.10, 0.04, 0.08, M(0xff7a00), bx - 0.12, by + 0.04, 0.06);
+      box(g, 0.08, 0.04, 0.08, M(0x2563eb), bx + 0.10, by + 0.04, -0.06);
+    });
+  });
+
+  parent.add(g);
+  return g;
+}
+
+/** Floor standing lush potted plant */
+function createFloorPlant(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  // Clean white ceramic cylinder pot
+  const potMat = M(0xffffff, { roughness: 0.2, metalness: 0.1 });
+  cyl(g, 0.26, 0.20, 0.52, potMat, 0, 0.26, 0, 16);
+  // Dark soil
+  cyl(g, 0.24, 0.24, 0.04, M(0x3e2723, { roughness: 0.9 }), 0, 0.51, 0, 14);
+
+  // Lush green broadleaf foliage spreading upward
+  const leafMat = M(0x2e7d32, { roughness: 0.6 });
+  const leafMatLight = M(0x43a047, { roughness: 0.6 });
+
+  for (let l = 0; l < 10; l++) {
+    const angle = (l / 10) * Math.PI * 2 + (l % 2) * 0.3;
+    const stemH = 0.35 + (l % 4) * 0.18;
+    const stemGroup = new THREE.Group();
+    stemGroup.position.set(0, 0.52, 0);
+    stemGroup.rotation.y = angle;
+
+    // Stem
+    const stem = cyl(stemGroup, 0.010, 0.010, stemH, M(0x1b5e20), 0, stemH / 2, 0.08, 8);
+    stem.rotation.x = 0.35 + (l % 3) * 0.12;
+
+    // Broad leaf
+    const leafGeom = new THREE.SphereGeometry(0.16, 8, 6);
+    leafGeom.scale(1.2, 0.08, 0.65);
+    const leaf = new THREE.Mesh(leafGeom, l % 2 === 0 ? leafMat : leafMatLight);
+    leaf.position.set(0, stemH, 0.22);
+    leaf.rotation.x = 0.45;
+    leaf.rotation.z = (l % 2 === 0 ? 0.2 : -0.2);
+    stemGroup.add(leaf);
+
+    g.add(stemGroup);
+  }
+
+  parent.add(g);
+  return g;
+}
+
 export function buildBackWall(scene) {
   const anim = { spin: [], head: null };
 
-  // Helper: zone bay with sign + bench table
+  // Helper: zone bay with sign + bench table (used for Design and Coding zones)
   const bay = (x, title) => {
     put(scene, createSign(title, 4.4, 1.05), x, 4.6, -14.76);
     createTable(scene, 5.5, 1.3, x, -14.1);
   };
 
-  // ━━━━━━━ 3D PRINTING ZONE (x ≈ -11) ━━━━━━━
-  bay(-11, '3D PRINTING ZONE');
+  // ━━━━━━━ 3D PRINTING ZONE (x ≈ -11.0) ━━━━━━━
+  // Workbench Table (5.8m wide, 1.25m deep, 0.82m tall)
+  createTable(scene, 5.8, 1.25, -11.0, -14.1, 0.82);
 
-  // Two 3D printers
-  const print1 = createPrinter(scene, -12.4, 0.84, -14.1);
-  const print2 = createPrinter(scene, -9.6, 0.84, -14.1);
-  anim.spin.push(print1, print2);
+  // Hero 3D Printer (center of workbench)
+  const heroPrinter = createHero3DPrinter(scene, -11.0, 0.82, -14.1);
+  anim.spin.push(heroPrinter);
 
-  // Chairs
-  createChair(scene, -12.4, -12.6);
-  createChair(scene, -9.6, -12.6);
+  // Tabletop props (cutting mat, astronaut, rocket, gear, temple, orange parts)
+  createTabletopProps(scene, -11.0, 0.82, -14.1);
 
-  // Filament spool shelf
-  box(scene, 3.2, 0.06, 0.5, M(C.black), -11, 2.6, -14.5);
-  const spoolColors = [0xff7a00, 0xffffff, 0x2f6bff, 0x222222, 0xffc400, 0xe53935];
-  spoolColors.forEach((c, i) => {
-    const s = cyl(scene, 0.25, 0.25, 0.18, M(c), -12.2 + i * 0.5, 2.9, -14.5, 16);
-    s.rotation.x = Math.PI / 2;
-  });
+  // Filament Spool Shelf (above pegboard, wooden shelf with 6 hollow spools on rod)
+  createFilamentSpoolShelf(scene, -13.1, 2.65, -14.62);
 
-  // Pegboard with tools
-  box(scene, 1.8, 1.4, 0.05, M(0x2a2a30), -15.2, 2, -14.76);
-  // Tool pegs
-  const pegColors = [C.orange, 0xff3333, C.orange, 0x4488ff, C.orange];
-  pegColors.forEach((c, i) => {
-    box(scene, 0.06, 0.4 + (i % 2) * 0.15, 0.04, M(c), -15.8 + i * 0.3, 2.1, -14.72);
-  });
+  // Pegboard with tools (2 pliers, 4 screwdrivers, ruler, caliper, orange tool cup)
+  createPegboardWithTools(scene, -13.1, 1.62, -14.73);
 
-  // Shelf with printed models
-  createRack(scene, -7.2, -14.3, 0, 1.8);
-  // Small printed model shapes on shelf
-  box(scene, 0.2, 0.3, 0.2, M(C.orange), -7.2, 0.6, -14.3);
-  const printedSphere = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), M(0x2f6bff));
-  printedSphere.position.set(-6.8, 0.55, -14.3);
-  scene.add(printedSphere);
+  // Right Open Shelving Unit (black metal + wood shelves with models & storage boxes)
+  createOpenShelfUnit(scene, -8.2, 0.0, -14.25);
 
-  // Sub-sign
-  put(scene, createSign('Design > Slice > Print > Prototype', 4.2, 0.45, { bar: false }), -11, 3.9, -14.76);
+  // Single task chair: black frame, vibrant orange seat cushion (facing the desk)
+  createChair(scene, -10.2, -13.1, Math.PI, { orangeSeat: true });
+
+  // Full-sized floor plant near corner
+  createFloorPlant(scene, -15.5, 0.0, -13.8);
 
   // ━━━━━━━ DESIGN ZONE (x ≈ 0) ━━━━━━━
   bay(0, 'DESIGN ZONE');
@@ -109,18 +681,15 @@ export function buildBackWall(scene) {
   createRack(scene, 15.5, -14.3, 0, 2.2);
   createDrone(scene, 15.5, 2.7, -14.3);
 
-  // Hexagon icon signs removed — replaced by full wall murals below
-
-  // ━━━━━━━ ZONE WALL MURALS (matching reference images exactly) ━━━━━━━
-  // 3D Printing Zone mural (left bay)
+  // ━━━━━━━ ZONE WALL MURALS ━━━━━━━
+  // 3D Printing Zone mural (left bay, reference-matched full painted wall)
   create3DPrintingMural(scene);
   // Coding Zone mural (right bay)
   createCodingZoneMural(scene);
   // Main centre wall mural: Build•Learn•Innovate + robot mascot + tech icons
   createMainWallMural(scene);
 
-  // Corner plants
-  createPlant(scene, -18, 2.2, -14.3, 0.5);
+  // Far right corner plant
   createPlant(scene, 18, 2.2, -14.3, 0.5);
 
   return anim;

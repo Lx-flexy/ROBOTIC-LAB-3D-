@@ -92,7 +92,7 @@ function createTubeLeg(parent, x1, y1, z1, x2, y2, z2, radius, mat) {
 }
 
 /** Realistic 4-legged ergonomic training/conference chair (matching Reference 2 & 4) */
-export function createChair(parent, x, z, ry = 0) {
+export function createChair(parent, x, z, ry = 0, opts = {}) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
   g.rotation.y = ry;
@@ -126,10 +126,13 @@ export function createChair(parent, x, z, ry = 0) {
   const wf = cyl(g, 0.022, 0.022, 0.48, shellMat, 0, 0.45, -0.23, 12);
   wf.rotation.z = Math.PI / 2;
 
-  // Textured contoured seat cushion with orange accent perimeter
+  // Textured contoured seat cushion (orange seat option or dark textured)
+  const cushionMat = opts.orangeSeat
+    ? M(0xff7a00, { roughness: 0.55 })
+    : new THREE.MeshStandardMaterial({ map: seatTex, roughness: 0.6 });
   const cushion = new THREE.Mesh(
-    new THREE.BoxGeometry(0.43, 0.018, 0.40),
-    new THREE.MeshStandardMaterial({ map: seatTex, roughness: 0.6 })
+    new THREE.BoxGeometry(0.43, 0.022, 0.40),
+    cushionMat
   );
   cushion.position.set(0, 0.472, -0.01);
   g.add(cushion);
