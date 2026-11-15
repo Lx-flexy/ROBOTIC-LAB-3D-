@@ -7,6 +7,7 @@ import { M, Bm, C, codeScreenTex, cadScreenTex, canvasTex } from '../../utils/ma
 import { createTable, createChair, createMonitor, createSign, createRack, createPlant } from '../props/furniture.js';
 import { createPrinter, createDrone, createCar, createRobot, createBook, createMug } from '../props/equipment.js';
 import { BRAND_SHORT } from '../../config.js';
+import { create3DPrintingMural, createCodingZoneMural, createMainWallMural } from '../props/wallmurals.js';
 
 export function buildBackWall(scene) {
   const anim = { spin: [], head: null };
@@ -108,66 +109,17 @@ export function buildBackWall(scene) {
   createRack(scene, 15.5, -14.3, 0, 2.2);
   createDrone(scene, 15.5, 2.7, -14.3);
 
-  // Hexagon icon signs (Python, C++, </>, GitHub)
-  ['Python', 'C++', '</>', 'GitHub'].forEach((t, i) => {
-    const iconSign = createHexSign(t);
-    put(scene, iconSign, 7.4, 4 - i * 0.8, -14.76);
-  });
+  // Hexagon icon signs removed — replaced by full wall murals below
 
-  // ━━━━━━━ WALL GRAPHICS BETWEEN ZONES ━━━━━━━
-  // "Build • Learn • Innovate" text blocks on wall (between Design and Coding)
-  const mottoTex = canvasTex(400, 300, (g, w, h) => {
-    const words = [
-      { text: 'Build', bg: '#14284b', fg: '#fff' },
-      { text: 'Learn', bg: '#ff7a00', fg: '#fff' },
-      { text: 'Innovate', bg: '#ff7a00', fg: '#fff' },
-    ];
-    words.forEach(({ text, bg, fg }, i) => {
-      const y = 20 + i * 90;
-      g.fillStyle = bg;
-      g.beginPath(); g.roundRect(40, y, 320, 70, 12); g.fill();
-      g.fillStyle = fg;
-      g.font = 'bold 36px sans-serif';
-      g.textAlign = 'center';
-      g.fillText(text, w / 2, y + 46);
-    });
-  });
-  const mottoMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.5, 2),
-    new THREE.MeshBasicMaterial({ map: mottoTex, transparent: true })
-  );
-  put(scene, mottoMesh, 5.5, 3.5, -14.76);
+  // ━━━━━━━ ZONE WALL MURALS (matching reference images exactly) ━━━━━━━
+  // 3D Printing Zone mural (left bay)
+  create3DPrintingMural(scene);
+  // Coding Zone mural (right bay)
+  createCodingZoneMural(scene);
+  // Main centre wall mural: Build•Learn•Innovate + robot mascot + tech icons
+  createMainWallMural(scene);
 
-  // Painted mascot on back wall
-  createRobot(scene, -5.5, 0, -14.5, 0.6);
-
-  // Drone & gear painted icons above mascot
-  const paintedDroneTex = canvasTex(200, 200, (g, w, h) => {
-    g.fillStyle = '#14284b';
-    g.font = '100px sans-serif';
-    g.textAlign = 'center';
-    g.fillText('🚁', w / 2, h / 2 + 25);
-  });
-  const droneIcon = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.2, 1.2),
-    new THREE.MeshBasicMaterial({ map: paintedDroneTex, transparent: true })
-  );
-  put(scene, droneIcon, -5.5, 4.5, -14.76);
-
-  // Gear icon
-  const gearTex = canvasTex(150, 150, (g, w, h) => {
-    g.fillStyle = '#ff7a00';
-    g.font = '80px sans-serif';
-    g.textAlign = 'center';
-    g.fillText('⚙', w / 2, h / 2 + 22);
-  });
-  const gear1 = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.9, 0.9),
-    new THREE.MeshBasicMaterial({ map: gearTex, transparent: true })
-  );
-  put(scene, gear1, -4.2, 4.8, -14.76);
-
-  // Corner windows on back wall
+  // Corner plants
   createPlant(scene, -18, 2.2, -14.3, 0.5);
   createPlant(scene, 18, 2.2, -14.3, 0.5);
 

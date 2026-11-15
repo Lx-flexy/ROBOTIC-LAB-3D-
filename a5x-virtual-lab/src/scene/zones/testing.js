@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { box, cyl, put } from '../../utils/geometry.js';
 import { M, Bm, C, canvasTex, stripeTexture } from '../../utils/materials.js';
 import { createSign, createRack, createPlant } from '../props/furniture.js';
+import { createTestingZoneMural } from '../props/wallmurals.js';
 import { createDrone, createCar } from '../props/equipment.js';
 
 export function buildTestingZone(scene) {
@@ -14,37 +15,10 @@ export function buildTestingZone(scene) {
   const RY = Math.PI / 2;
   const X = -15.5; // centre of arena floor
 
-  // ━━━━━━━ WALL BANNER ━━━━━━━
-  put(scene, createSign('TESTING ZONE', 4.8, 1.1), LW, 4.6, -3, RY);
+  // ━━━━━━━ WALL MURAL (reference image style: SRI + Testing Zone + 6 icons) ━━━━━━━
+  createTestingZoneMural(scene);
 
-  // Icon row banner (6 icons: Robo Race, Robo Soccer, Line Following, Obstacle Test, Drone Test, Project Testing)
-  const iconLabels = ['Robo\nRace', 'Robo\nSoccer', 'Line\nFollow', 'Obstacle\nTest', 'Drone\nTest', 'Project\nTesting'];
-  const iconSymbols = ['🏁', '⚽', '〰️', '⚠️', '🚁', '⚙️'];
-  iconLabels.forEach((t, i) => {
-    const iconTex = canvasTex(280, 220, (g, w, h) => {
-      // Orange border rounded rect
-      g.strokeStyle = '#ff7a00';
-      g.lineWidth = 6;
-      g.fillStyle = '#fff';
-      g.beginPath(); g.roundRect(8, 8, w - 16, h - 16, 16); g.fill(); g.stroke();
-      // Icon
-      g.font = '52px sans-serif';
-      g.textAlign = 'center';
-      g.fillText(iconSymbols[i], w / 2, 70);
-      // Label
-      g.fillStyle = '#14284b';
-      g.font = 'bold 26px sans-serif';
-      const lines = t.split('\n');
-      lines.forEach((l, li) => g.fillText(l, w / 2, 120 + li * 30));
-    });
-    const icon = new THREE.Mesh(
-      new THREE.PlaneGeometry(1.4, 1.1),
-      new THREE.MeshBasicMaterial({ map: iconTex, transparent: true })
-    );
-    put(scene, icon, LW, 3.1, -9 + i * 1.75, RY);
-  });
-
-  // "BUILD • TEST • COMPETE • INNOVATE" text
+  // "BUILD • TEST • COMPETE • INNOVATE" text at bottom of wall
   put(scene, createSign('BUILD • TEST • COMPETE • INNOVATE', 6, 0.5, {
     bg: 'none', fg: '#14284b', bar: false
   }), LW, 1.9, 6, RY);

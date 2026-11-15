@@ -18,6 +18,7 @@ import {
   createSpoolRack,
 } from '../props/equipment.js';
 import { BRAND_SHORT, WALL_TEXTS } from '../../config.js';
+import { createRoboticsLabMural } from '../props/wallmurals.js';
 
 export function buildRightWall(scene) {
   const RW = 19.78;          // Right wall inner surface X
@@ -127,6 +128,9 @@ export function buildRightWall(scene) {
   // ═════════════════════════════════════════════════════════════════════════════
   // 3. WALL GRAPHICS & EMBEDDED OBJECTS (Above Workbench, Y: 1.5 to 5.6)
   // ═════════════════════════════════════════════════════════════════════════════
+
+  // ━━━ BIG ROBOTICS LAB WALL MURAL (behind the TV area, z = -13 to +3) ━━━
+  createRoboticsLabMural(scene);
 
   // ── (A) Far Left Navy Chevron Strip (z = -13.6, y = 3.4) ──
   // Base navy vertical chevron panel
