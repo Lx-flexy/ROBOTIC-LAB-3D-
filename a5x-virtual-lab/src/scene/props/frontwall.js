@@ -357,8 +357,8 @@ function createRightEmptyPanel(scene) {
 /* ── EXPORT ── */
 export function createFrontWallDecor(scene) {
   createFrontTopBanner(scene);
-  createFrontLeftPanel(scene);
-  createFrontRightPanel(scene);
   createMascot(scene);
-  createRightEmptyPanel(scene);
+  // createFrontLeftPanel(scene);   // removed by user request
+  // createFrontRightPanel(scene);  // removed by user request
+  // createRightEmptyPanel(scene);  // removed by user request
 }
