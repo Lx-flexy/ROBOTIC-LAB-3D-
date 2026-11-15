@@ -1655,3 +1655,474 @@ export function createRoboticsLabMural(scene) {
   mesh.rotation.y = -Math.PI / 2;
   scene.add(mesh);
 }
+
+/**
+ * 6. VECTOR A5X MASCOT — Crisp, high-resolution vector drawing
+ * Faithful recreation of user-provided A5X mascot with thumbs up pose
+ */
+export function drawA5XMascotVector(g, cx, cy, h) {
+  g.save();
+  const headCY = cy - h * 0.25;
+  const headW = h * 0.38;
+  const headH = h * 0.28;
+  const lw = Math.max(2.5, h * 0.016);
+
+  // 1. Soft contact shadow under feet
+  g.fillStyle = 'rgba(20, 40, 75, 0.16)';
+  g.beginPath();
+  g.ellipse(cx, cy + h * 0.49, h * 0.22, h * 0.035, 0, 0, Math.PI * 2);
+  g.fill();
+
+  // 2. Antenna
+  g.strokeStyle = '#334155';
+  g.lineWidth = Math.max(3, h * 0.016);
+  g.lineCap = 'round';
+  g.beginPath();
+  g.moveTo(cx, headCY - headH * 0.5);
+  g.lineTo(cx, cy - h * 0.46);
+  g.stroke();
+  g.fillStyle = '#ff7a00';
+  g.beginPath();
+  g.arc(cx, cy - h * 0.46, h * 0.035, 0, Math.PI * 2);
+  g.fill();
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw;
+  g.stroke();
+
+  // 3. Ear Pods (Left & Right)
+  [-1, 1].forEach((dir) => {
+    const ex = cx + dir * (headW * 0.52);
+    const ey = headCY;
+    g.fillStyle = '#e2e8f0';
+    g.strokeStyle = '#1e293b';
+    g.lineWidth = lw;
+    g.beginPath();
+    g.roundRect(ex - h * 0.025, ey - h * 0.08, h * 0.05, h * 0.16, h * 0.02);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.roundRect(ex - h * 0.012, ey - h * 0.05, h * 0.024, h * 0.10, h * 0.01);
+    g.fill();
+  });
+
+  // 4. Head Helmet
+  g.fillStyle = '#ffffff';
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw * 1.2;
+  g.beginPath();
+  g.roundRect(cx - headW * 0.5, headCY - headH * 0.5, headW, headH, h * 0.09);
+  g.fill();
+  g.stroke();
+
+  // 5. Visor Screen
+  const vW = headW * 0.78;
+  const vH = headH * 0.68;
+  g.fillStyle = '#111827';
+  g.strokeStyle = '#334155';
+  g.lineWidth = lw * 0.8;
+  g.beginPath();
+  g.roundRect(cx - vW * 0.5, headCY - vH * 0.5, vW, vH, h * 0.06);
+  g.fill();
+  g.stroke();
+
+  // 6. Glowing Smiling Eyes (^ ^)
+  g.strokeStyle = '#00f5ff';
+  g.lineWidth = lw * 1.5;
+  g.lineCap = 'round';
+  [-1, 1].forEach((dir) => {
+    const eyeX = cx + dir * (headW * 0.20);
+    const eyeY = headCY - h * 0.01;
+    g.beginPath();
+    g.arc(eyeX, eyeY, h * 0.042, Math.PI * 1.15, Math.PI * 1.85);
+    g.stroke();
+  });
+
+  // 7. Visor Smile
+  g.strokeStyle = '#ffffff';
+  g.lineWidth = lw * 0.9;
+  g.beginPath();
+  g.arc(cx, headCY + h * 0.048, h * 0.038, Math.PI * 0.2, Math.PI * 0.8);
+  g.stroke();
+
+  // 8. Neck Joint
+  g.fillStyle = '#334155';
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw;
+  g.beginPath();
+  g.roundRect(cx - h * 0.05, headCY + headH * 0.5 - h * 0.015, h * 0.10, h * 0.035, h * 0.01);
+  g.fill();
+  g.stroke();
+
+  // 9. Pelvis & Hips
+  g.fillStyle = '#f1f5f9';
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw;
+  g.beginPath();
+  g.roundRect(cx - h * 0.12, cy + h * 0.10, h * 0.24, h * 0.06, h * 0.03);
+  g.fill();
+  g.stroke();
+
+  // 10. Legs & Boots (drawn behind torso/arms)
+  [-1, 1].forEach((dir) => {
+    const lx = cx + dir * (h * 0.09);
+    g.fillStyle = '#ffffff';
+    g.strokeStyle = '#1e293b';
+    g.lineWidth = lw;
+    g.beginPath();
+    g.roundRect(lx - h * 0.045, cy + h * 0.15, h * 0.09, h * 0.11, h * 0.02);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#e2e8f0';
+    g.beginPath();
+    g.arc(lx, cy + h * 0.27, h * 0.038, 0, Math.PI * 2);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#ffffff';
+    g.beginPath();
+    g.roundRect(lx - h * 0.042, cy + h * 0.30, h * 0.084, h * 0.11, h * 0.02);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#f8fafc';
+    g.beginPath();
+    g.roundRect(lx - (dir < 0 ? h * 0.065 : h * 0.04), cy + h * 0.40, h * 0.105, h * 0.075, [h * 0.03, h * 0.03, h * 0.01, h * 0.01]);
+    g.fill();
+    g.stroke();
+    g.fillStyle = '#334155';
+    g.beginPath();
+    g.roundRect(lx - (dir < 0 ? h * 0.068 : h * 0.042), cy + h * 0.465, h * 0.11, h * 0.022, h * 0.008);
+    g.fill();
+    g.stroke();
+  });
+
+  // 11. Torso Chest Armor
+  const chestTop = cy - h * 0.08;
+  const chestH = h * 0.18;
+  g.fillStyle = '#ffffff';
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw * 1.1;
+  g.beginPath();
+  g.roundRect(cx - h * 0.16, chestTop, h * 0.32, chestH, [h * 0.04, h * 0.04, h * 0.02, h * 0.02]);
+  g.fill();
+  g.stroke();
+
+  g.fillStyle = '#14284b';
+  g.font = `900 ${Math.round(h * 0.06)}px 'Segoe UI', system-ui, sans-serif`;
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText('A5X', cx, cy - h * 0.015);
+
+  g.font = `bold ${Math.round(h * 0.018)}px 'Segoe UI', system-ui, sans-serif`;
+  g.fillStyle = '#64748b';
+  g.fillText('ROBOTICS', cx, cy + h * 0.028);
+
+  // 12. Vibrant Orange Waist Belt
+  g.fillStyle = '#ff7a00';
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw;
+  g.beginPath();
+  g.moveTo(cx - h * 0.13, cy + h * 0.055);
+  g.lineTo(cx + h * 0.13, cy + h * 0.055);
+  g.lineTo(cx + h * 0.09, cy + h * 0.10);
+  g.lineTo(cx - h * 0.09, cy + h * 0.10);
+  g.closePath();
+  g.fill();
+  g.stroke();
+
+  // 13. Left Arm (Viewer's Right, hanging naturally)
+  const lShoulderX = cx + h * 0.17;
+  const lShoulderY = cy - h * 0.04;
+  g.fillStyle = '#e2e8f0';
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw;
+  g.beginPath();
+  g.arc(lShoulderX, lShoulderY, h * 0.038, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  g.roundRect(lShoulderX - h * 0.03, lShoulderY + h * 0.02, h * 0.06, h * 0.09, h * 0.02);
+  g.fill(); g.stroke();
+  g.fillStyle = '#334155';
+  g.beginPath();
+  g.arc(lShoulderX + h * 0.02, lShoulderY + h * 0.12, h * 0.028, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  g.roundRect(lShoulderX - h * 0.01, lShoulderY + h * 0.14, h * 0.06, h * 0.09, h * 0.025);
+  g.fill(); g.stroke();
+
+  // 14. Right Arm (Viewer's Left, Proud Thumbs Up Pose!)
+  const rShoulderX = cx - h * 0.17;
+  const rShoulderY = cy - h * 0.04;
+  g.fillStyle = '#e2e8f0';
+  g.strokeStyle = '#1e293b';
+  g.lineWidth = lw;
+  g.beginPath();
+  g.arc(rShoulderX, rShoulderY, h * 0.038, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  g.save();
+  g.translate(rShoulderX, rShoulderY);
+  g.rotate(-0.55);
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  g.roundRect(-h * 0.03, 0, h * 0.06, h * 0.10, h * 0.02);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#334155';
+  g.beginPath();
+  g.arc(0, h * 0.11, h * 0.028, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  g.translate(0, h * 0.11);
+  g.rotate(-1.15);
+  g.fillStyle = '#ffffff';
+  g.beginPath();
+  g.roundRect(-h * 0.03, 0, h * 0.06, h * 0.11, h * 0.02);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#334155';
+  g.beginPath();
+  g.roundRect(-h * 0.035, h * 0.10, h * 0.07, h * 0.025, h * 0.008);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#f8fafc';
+  g.beginPath();
+  g.arc(0, h * 0.16, h * 0.045, 0, Math.PI * 2);
+  g.fill(); g.stroke();
+
+  g.fillStyle = '#f8fafc';
+  g.beginPath();
+  g.roundRect(-h * 0.05, h * 0.13, h * 0.038, h * 0.075, h * 0.018);
+  g.fill(); g.stroke();
+
+  g.restore();
+  g.restore();
+}
+
+/**
+ * 7. SIDE WALL MURAL — Right Wall (z = -1.5 to z = +14.5, 16.0m × 5.8m)
+ * Full-height seamless painted mural matching Testing Zone & Back Wall.
+ * Includes:
+ *  - Warm cream painted wall base (#fff1e3)
+ *  - Dynamic diagonal navy (#14284b) & orange (#ff7a00) painted stripes
+ *  - High-res vector A5X mascot in dashed circle badge (between window and door)
+ *  - Tagline "Build • Test • Compete • Innovate" with orange underline stroke
+ *  - Innovation & Robotics Lab tech feature wall to the right of the door
+ *  - Bottom horizontal orange stripe meeting the baseboard
+ */
+export function createRightWallSideMural(scene) {
+  const W = 4096, H = 1484;
+  const tex = canvasTex(W, H, (g) => {
+    // 1. Warm cream base wall paint
+    g.fillStyle = '#fff1e3';
+    g.fillRect(0, 0, W, H);
+
+    // 2. Bottom orange horizontal stripe (meets skirting board)
+    g.fillStyle = '#ff7a00';
+    g.fillRect(0, H - 28, W, 28);
+
+    // 3. Sweeping diagonal navy & orange painted bands
+    // Diagonal across the wall to the right of the door (x ≈ 2000 to 3600)
+    g.fillStyle = '#14284b';
+    g.beginPath();
+    g.moveTo(2150, 0);
+    g.lineTo(2620, 0);
+    g.lineTo(3380, H);
+    g.lineTo(2910, H);
+    g.closePath();
+    g.fill();
+
+    // Parallel orange accent band
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.moveTo(2640, 0);
+    g.lineTo(2760, 0);
+    g.lineTo(3520, H);
+    g.lineTo(3400, H);
+    g.closePath();
+    g.fill();
+
+    // Subtle diagonal stripe on the far left (z ≈ -1.0)
+    g.fillStyle = '#14284b';
+    g.beginPath();
+    g.moveTo(0, 0);
+    g.lineTo(260, 0);
+    g.lineTo(0, 480);
+    g.closePath();
+    g.fill();
+
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.moveTo(270, 0);
+    g.lineTo(340, 0);
+    g.lineTo(0, 620);
+    g.lineTo(0, 500);
+    g.closePath();
+    g.fill();
+
+    // 4. Tech circuit traces branching across the painted wall
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 6;
+    g.lineCap = 'round';
+    // Circuit line 1
+    g.beginPath();
+    g.moveTo(3500, 320);
+    g.lineTo(3820, 320);
+    g.lineTo(3890, 420);
+    g.lineTo(4020, 420);
+    g.stroke();
+    [[3500, 320], [3820, 320], [3890, 420], [4020, 420]].forEach(([cx, cy]) => {
+      g.fillStyle = '#ff7a00';
+      g.beginPath(); g.arc(cx, cy, 10, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff1e3';
+      g.beginPath(); g.arc(cx, cy, 5, 0, Math.PI * 2); g.fill();
+    });
+
+    // Circuit line 2 (navy)
+    g.strokeStyle = '#14284b';
+    g.lineWidth = 5;
+    g.beginPath();
+    g.moveTo(2000, 850);
+    g.lineTo(2150, 850);
+    g.lineTo(2240, 960);
+    g.lineTo(2400, 960);
+    g.stroke();
+    [[2000, 850], [2150, 850], [2240, 960], [2400, 960]].forEach(([cx, cy]) => {
+      g.fillStyle = '#14284b';
+      g.beginPath(); g.arc(cx, cy, 8, 0, Math.PI * 2); g.fill();
+    });
+
+    // 5. MAIN MASCOT BADGE — Between Window and Door (z ≈ 3.0 -> x_c ≈ 1152, y_c ≈ 660)
+    // Clear of window right frame (x_c ≈ 910) and door left frame (x_c ≈ 1395)
+    const badgeX = 1152;
+    const badgeY = 640;
+    const badgeRadius = 210;
+
+    // Warm radial glow behind badge
+    const badgeGlow = g.createRadialGradient(badgeX, badgeY, 30, badgeX, badgeY, badgeRadius + 20);
+    badgeGlow.addColorStop(0, 'rgba(255, 122, 0, 0.16)');
+    badgeGlow.addColorStop(0.7, 'rgba(255, 122, 0, 0.08)');
+    badgeGlow.addColorStop(1, 'rgba(255, 122, 0, 0.0)');
+    g.fillStyle = badgeGlow;
+    g.beginPath();
+    g.arc(badgeX, badgeY, badgeRadius + 20, 0, Math.PI * 2);
+    g.fill();
+
+    // Soft orange dashed circle badge outline
+    g.save();
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 9;
+    g.setLineDash([26, 16]);
+    g.beginPath();
+    g.arc(badgeX, badgeY, badgeRadius, 0, Math.PI * 2);
+    g.stroke();
+    g.restore();
+
+    // Draw Crisp Vector A5X Mascot inside badge
+    drawA5XMascotVector(g, badgeX, badgeY, 370);
+
+    // TAGLINE next to mascot: "Build • Test • Compete • Innovate" in bold navy with orange underline
+    g.fillStyle = '#14284b';
+    g.font = `900 36px 'Segoe UI', system-ui, sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('BUILD   •   TEST', badgeX, badgeY + badgeRadius + 48);
+    g.fillText('COMPETE   •   INNOVATE', badgeX, badgeY + badgeRadius + 94);
+
+    // Orange underline stroke below tagline
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.roundRect(badgeX - 160, badgeY + badgeRadius + 120, 320, 6, 3);
+    g.fill();
+
+    // 6. HERO FEATURE WALL — Right of Door (x_c ≈ 2900, y_c ≈ 520)
+    // Fills the large empty wall area around the door
+    const featX = 2920;
+    const featY = 480;
+
+    // Navy rounded pill title banner
+    const pillW = 740, pillH = 110;
+    g.fillStyle = '#14284b';
+    g.beginPath();
+    g.roundRect(featX - pillW / 2, featY - pillH / 2, pillW, pillH, pillH / 2);
+    g.fill();
+    g.strokeStyle = '#ff7a00';
+    g.lineWidth = 6;
+    g.stroke();
+
+    // White bold title text inside pill
+    g.fillStyle = '#ffffff';
+    g.font = `900 48px 'Segoe UI', system-ui, sans-serif`;
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('ROBOTICS & AI LAB', featX - 45, featY);
+
+    // Orange chevrons on right of pill (>>>)
+    g.fillStyle = '#ff7a00';
+    for (let c = 0; c < 3; c++) {
+      const chX = featX + pillW / 2 - 110 + c * 24;
+      g.beginPath();
+      g.moveTo(chX, featY - 20);
+      g.lineTo(chX + 16, featY);
+      g.lineTo(chX, featY + 20);
+      g.lineTo(chX - 6, featY + 20);
+      g.lineTo(chX + 10, featY);
+      g.lineTo(chX - 6, featY - 20);
+      g.closePath();
+      g.fill();
+    }
+
+    // Secondary Motto below pill
+    g.fillStyle = '#14284b';
+    g.font = `800 38px 'Segoe UI', system-ui, sans-serif`;
+    g.fillText('INVENT   •   CODE   •   DISCOVER', featX, featY + 105);
+
+    // Orange underline
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.roundRect(featX - 240, featY + 132, 480, 5, 2.5);
+    g.fill();
+
+    // Technical line-art schematics in paint style
+    // Quadcopter technical line-art (x ≈ 2380, y ≈ 1120)
+    g.strokeStyle = '#14284b';
+    g.lineWidth = 4;
+    g.beginPath(); g.arc(2380, 1120, 36, 0, Math.PI * 2); g.stroke();
+    [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sy]) => {
+      const armX = 2380 + sx * 65;
+      const armY = 1120 + sy * 45;
+      g.beginPath(); g.moveTo(2380, 1120); g.lineTo(armX, armY); g.stroke();
+      g.strokeStyle = '#ff7a00'; g.lineWidth = 3;
+      g.beginPath(); g.arc(armX, armY, 22, 0, Math.PI * 2); g.stroke();
+      g.strokeStyle = '#14284b'; g.lineWidth = 4;
+    });
+
+    // Technical rover line-art (x ≈ 3720, y ≈ 1080)
+    g.strokeStyle = '#14284b';
+    g.lineWidth = 4;
+    g.beginPath(); g.roundRect(3640, 1040, 160, 80, 12); g.stroke();
+    g.fillStyle = '#ff7a00';
+    g.beginPath(); g.arc(3720, 1070, 18, 0, Math.PI * 2); g.fill();
+    [-55, 55].forEach((wx) => {
+      g.fillStyle = '#14284b';
+      g.beginPath(); g.roundRect(3720 + wx - 18, 1120, 36, 26, 6); g.fill();
+      g.beginPath(); g.roundRect(3720 + wx - 18, 1014, 36, 26, 6); g.fill();
+    });
+  });
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    roughness: 0.9,
+    metalness: 0.0,
+  });
+
+  // Physical plane covering from z = -1.5 to z = +14.5 (16.0m wide, 5.8m tall)
+  const mesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(16.0, 5.8),
+    mat
+  );
+  mesh.position.set(19.76, 3.0, 6.5);
+  mesh.rotation.y = -Math.PI / 2;
+  scene.add(mesh);
+}
