@@ -96,6 +96,12 @@ const infoPanel = createInfoPanel();
 const minimap = createMinimap(camera);
 
 createMenu((zone) => {
+  // Close all popups on teleport
+  infoPanel.hide();
+  zoneCard.hide();
+  currentZone = null;
+  $('#action-prompt')?.classList.add('hidden');
+
   // If teleporting to AR / VR Lab, make sure the door is open so the user sees inside
   if (zone.id === 'arvr' || zone.id === 'meeting') {
     const door = getInteractiveDoor();
@@ -165,6 +171,13 @@ const mouseVec = new THREE.Vector2();
 
 function handleInteraction(clientX, clientY) {
   if (state !== 'free') return;
+
+  // If an info popup is currently open, clicking anywhere closes it
+  if (infoPanel.isOpen()) {
+    infoPanel.hide();
+    return;
+  }
+
   const door = getInteractiveDoor();
   if (door) {
     const rect = renderer.domElement.getBoundingClientRect();
@@ -177,18 +190,29 @@ function handleInteraction(clientX, clientY) {
       return;
     }
   }
+
   const hotspot = findNearestHotspot(camera, 5);
-  if (hotspot) infoPanel.show(hotspot);
+  if (hotspot) {
+    // Only ONE popup at a time: close zoneCard and door prompt, then open infoPanel
+    zoneCard.hide();
+    currentZone = null;
+    $('#action-prompt')?.classList.add('hidden');
+    infoPanel.show(hotspot);
+  }
 }
 
 renderer.domElement.addEventListener('click', (e) => {
   handleInteraction(e.clientX, e.clientY);
 });
 
-// Key E for door open/close
+// Key E for door open/close or closing active popup
 window.addEventListener('keydown', (e) => {
   if (state !== 'free') return;
   if (e.key === 'e' || e.key === 'E') {
+    if (infoPanel.isOpen()) {
+      infoPanel.hide();
+      return;
+    }
     const door = getInteractiveDoor();
     if (door && camera.position.distanceTo(door.position) < 4.0) {
       door.toggle();
@@ -270,33 +294,42 @@ renderer.setAnimationLoop(() => {
 
     case 'free':
       controls.update(dt);
-      // Zone proximity check
-      let nearestZone = null;
-      let bestDist = Infinity;
-      for (const z of ZONES) {
-        const d = Math.hypot(
-          camera.position.x - z.center[0],
-          camera.position.z - z.center[1]
-        );
-        if (d < z.r && d < bestDist) {
-          bestDist = d;
-          nearestZone = z;
+
+      if (infoPanel.isOpen()) {
+        // While hotspot popup is active, keep other popups suppressed
+        zoneCard.hide();
+        currentZone = null;
+        $('#action-prompt')?.classList.add('hidden');
+      } else {
+        // Zone proximity check (only 1 zone card at a time)
+        let nearestZone = null;
+        let bestDist = Infinity;
+        for (const z of ZONES) {
+          const d = Math.hypot(
+            camera.position.x - z.center[0],
+            camera.position.z - z.center[1]
+          );
+          if (d < z.r && d < bestDist) {
+            bestDist = d;
+            nearestZone = z;
+          }
         }
-      }
-      if (nearestZone !== currentZone) {
-        currentZone = nearestZone;
-        zoneCard.show(nearestZone);
-      }
-      // Check interactive door proximity for prompt
-      const door = getInteractiveDoor();
-      const promptEl = $('#action-prompt');
-      if (door && promptEl) {
-        const dDoor = camera.position.distanceTo(door.position);
-        if (dDoor < 4.0) {
-          promptEl.classList.remove('hidden');
-          door.updatePromptUI();
-        } else {
-          promptEl.classList.add('hidden');
+        if (nearestZone !== currentZone) {
+          currentZone = nearestZone;
+          zoneCard.show(nearestZone);
+        }
+
+        // Check interactive door proximity for prompt (only when no info popup is open)
+        const door = getInteractiveDoor();
+        const promptEl = $('#action-prompt');
+        if (door && promptEl) {
+          const dDoor = camera.position.distanceTo(door.position);
+          if (dDoor < 4.0) {
+            promptEl.classList.remove('hidden');
+            door.updatePromptUI();
+          } else {
+            promptEl.classList.add('hidden');
+          }
         }
       }
       // Update minimap

@@ -4,21 +4,34 @@
 import { HOTSPOTS } from '../config.js';
 import * as THREE from 'three';
 
-export function createInfoPanel() {
+export function createInfoPanel(onClose) {
   const panel = document.getElementById('info-panel');
   const titleEl = panel?.querySelector('.info-title');
   const descEl = panel?.querySelector('.info-desc');
   const closeBtn = panel?.querySelector('.info-close');
 
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
+  function hide() {
+    if (panel?.classList.contains('visible')) {
       panel.classList.remove('visible');
+      if (typeof onClose === 'function') onClose();
+    }
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      hide();
     });
   }
 
-  // Close on Escape
+  // Close on Escape or E key
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') panel?.classList.remove('visible');
+    if (panel?.classList.contains('visible')) {
+      if (e.key === 'Escape' || e.key === 'e' || e.key === 'E') {
+        hide();
+        e.stopPropagation();
+      }
+    }
   });
 
   return {
@@ -28,8 +41,9 @@ export function createInfoPanel() {
       if (descEl) descEl.textContent = hotspot.desc;
       panel.classList.add('visible');
     },
-    hide() {
-      panel?.classList.remove('visible');
+    hide,
+    isOpen() {
+      return panel?.classList.contains('visible') || false;
     },
   };
 }

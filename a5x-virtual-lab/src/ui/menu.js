@@ -44,6 +44,10 @@ export function createZoneCard() {
       if (descEl) descEl.textContent = zone.desc;
       card?.classList.add('visible');
     },
+    hide() {
+      current = null;
+      card?.classList.remove('visible');
+    },
     get current() { return current; },
   };
 }

@@ -54,139 +54,171 @@ export function buildArVrLab(scene) {
   // ═══════════════════════════════════════════════════════════════════════════
   // 1. MARBLE FLOOR SLAB (Pristine gray marble, 1.2m tiles, zero stray lines)
   // ═══════════════════════════════════════════════════════════════════════════
-  const floorTex = getArVrFloorTexture();
-  const floorMat = new THREE.MeshStandardMaterial({
-    map: floorTex,
-    color: 0xffffff,
-    roughness: 0.35,
-    metalness: 0.0,
-    envMapIntensity: 0.0,
-  });
-  const slab = new THREE.Mesh(new THREE.BoxGeometry(roomW, 0.1, roomL), floorMat);
-  slab.position.set(centerX, floorY - 0.05, centerZ);
-  g.add(slab);
+  try {
+    const floorTex = getArVrFloorTexture();
+    const floorMat = new THREE.MeshStandardMaterial({
+      map: floorTex,
+      color: 0xffffff,
+      roughness: 0.35,
+      metalness: 0.0,
+      envMapIntensity: 0.0,
+    });
+    const slab = new THREE.Mesh(new THREE.BoxGeometry(roomW, 0.1, roomL), floorMat);
+    slab.position.set(centerX, floorY - 0.05, centerZ);
+    g.add(slab);
+  } catch (err) {
+    console.error('[AR/VR Lab] Floor slab build failed:', err);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 2. INDUSTRIAL DARK CEILING & LIGHTING
   // ═══════════════════════════════════════════════════════════════════════════
-  // Dark industrial grid ceiling slab
-  const ceilingMat = M(0x1b1b1f, { roughness: 0.9 });
-  box(g, roomW + wallThick * 2, 0.1, roomL + wallThick * 2, ceilingMat, centerX, ceilingY + 0.05, centerZ);
+  try {
+    // Dark industrial grid ceiling slab
+    const ceilingMat = M(0x1b1b1f, { roughness: 0.9 });
+    box(g, roomW + wallThick * 2, 0.1, roomL + wallThick * 2, ceilingMat, centerX, ceilingY + 0.05, centerZ);
 
-  // Suspended Linear LED Light Fixtures (4 longitudinal runs)
-  const lightRunX = [xMin + 2.8, centerX - 1.6, centerX + 1.6, xMax - 2.8];
-  lightRunX.forEach((lx) => {
-    // Two fixtures per run along Z
-    [zMin + 4.2, zMax - 4.2].forEach((lz) => {
-      // Black aluminum housing
-      box(g, 0.18, 0.08, 4.2, blackMetalMat, lx, ceilingY - 0.15, lz);
-      // Soft glowing emissive diffuser
-      box(g, 0.14, 0.02, 4.1, ledWarmMat, lx, ceilingY - 0.19, lz);
-      // Thin drop suspension wires
-      cyl(g, 0.003, 0.003, 0.12, chromeMat, lx, ceilingY - 0.06, lz - 1.8, 6);
-      cyl(g, 0.003, 0.003, 0.12, chromeMat, lx, ceilingY - 0.06, lz + 1.8, 6);
+    // Suspended Linear LED Light Fixtures (4 longitudinal runs)
+    const lightRunX = [xMin + 2.8, centerX - 1.6, centerX + 1.6, xMax - 2.8];
+    lightRunX.forEach((lx) => {
+      // Two fixtures per run along Z
+      [zMin + 4.2, zMax - 4.2].forEach((lz) => {
+        // Black aluminum housing
+        box(g, 0.18, 0.08, 4.2, blackMetalMat, lx, ceilingY - 0.15, lz);
+        // Soft glowing emissive diffuser
+        box(g, 0.14, 0.02, 4.1, ledWarmMat, lx, ceilingY - 0.19, lz);
+        // Thin drop suspension wires
+        cyl(g, 0.003, 0.003, 0.12, chromeMat, lx, ceilingY - 0.06, lz - 1.8, 6);
+        cyl(g, 0.003, 0.003, 0.12, chromeMat, lx, ceilingY - 0.06, lz + 1.8, 6);
+      });
     });
-  });
 
-  // Suspended Central AC Cassette Unit
-  box(g, 1.30, 0.22, 1.30, M(0xf0f0f2, { roughness: 0.3 }), centerX, ceilingY - 0.11, centerZ);
-  box(g, 1.15, 0.02, 1.15, M(0x222226), centerX, ceilingY - 0.21, centerZ);
+    // Suspended Central AC Cassette Unit
+    box(g, 1.30, 0.22, 1.30, M(0xf0f0f2, { roughness: 0.3 }), centerX, ceilingY - 0.11, centerZ);
+    box(g, 1.15, 0.02, 1.15, M(0x222226), centerX, ceilingY - 0.21, centerZ);
 
-  // Two Ceiling Fans
-  [centerZ - 2.8, centerZ + 2.8].forEach((fz) => {
-    const fanBase = new THREE.Group();
-    fanBase.position.set(centerX, 0, fz);
-    cyl(fanBase, 0.08, 0.11, 0.06, M(0x25252a), 0, ceilingY - 0.03, 0, 16);
-    cyl(fanBase, 0.018, 0.018, 0.38, M(0x25252a), 0, ceilingY - 0.22, 0, 10);
-    g.add(fanBase);
+    // Two Ceiling Fans
+    [centerZ - 2.8, centerZ + 2.8].forEach((fz) => {
+      const fanBase = new THREE.Group();
+      fanBase.position.set(centerX, 0, fz);
+      cyl(fanBase, 0.08, 0.11, 0.06, M(0x25252a), 0, ceilingY - 0.03, 0, 16);
+      cyl(fanBase, 0.018, 0.018, 0.38, M(0x25252a), 0, ceilingY - 0.22, 0, 10);
+      g.add(fanBase);
 
-    const rotor = new THREE.Group();
-    rotor.position.set(centerX, ceilingY - 0.42, fz);
-    cyl(rotor, 0.18, 0.18, 0.07, M(0x2a2a30), 0, 0, 0, 20);
-    for (let i = 0; i < 3; i++) {
-      const arm = new THREE.Group();
-      arm.rotation.y = (i * Math.PI * 2) / 3;
-      box(arm, 0.85, 0.01, 0.14, M(0x18181c, { roughness: 0.4 }), 0.55, 0, 0);
-      rotor.add(arm);
-    }
-    g.add(rotor);
-    anim.fans.push(rotor);
-  });
+      const rotor = new THREE.Group();
+      rotor.position.set(centerX, ceilingY - 0.42, fz);
+      cyl(rotor, 0.18, 0.18, 0.07, M(0x2a2a30), 0, 0, 0, 20);
+      for (let i = 0; i < 3; i++) {
+        const arm = new THREE.Group();
+        arm.rotation.y = (i * Math.PI * 2) / 3;
+        box(arm, 0.85, 0.01, 0.14, M(0x18181c, { roughness: 0.4 }), 0.55, 0, 0);
+        rotor.add(arm);
+      }
+      g.add(rotor);
+      anim.fans.push(rotor);
+    });
 
-  // Two Balanced Interior Ambient Point Lights (warm natural fill matching main hall)
-  const roomLight1 = new THREE.PointLight(0xfff5e4, 2.6, 16.0, 1.8);
-  roomLight1.position.set(centerX - 2.8, ceilingY - 0.6, centerZ - 2.2);
-  g.add(roomLight1);
+    // Two Balanced Interior Ambient Point Lights (warm natural fill matching main hall)
+    const roomLight1 = new THREE.PointLight(0xfff5e4, 2.6, 16.0, 1.8);
+    roomLight1.position.set(centerX - 2.8, ceilingY - 0.6, centerZ - 2.2);
+    g.add(roomLight1);
 
-  const roomLight2 = new THREE.PointLight(0xfff5e4, 2.6, 16.0, 1.8);
-  roomLight2.position.set(centerX + 2.8, ceilingY - 0.6, centerZ + 2.2);
-  g.add(roomLight2);
+    const roomLight2 = new THREE.PointLight(0xfff5e4, 2.6, 16.0, 1.8);
+    roomLight2.position.set(centerX + 2.8, ceilingY - 0.6, centerZ + 2.2);
+    g.add(roomLight2);
+  } catch (err) {
+    console.error('[AR/VR Lab] Ceiling/Lighting build failed:', err);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 3. ARCHITECTURAL WALLS & SKIRTING
   // ═══════════════════════════════════════════════════════════════════════════
-  // North Wall (Z = zMin, Main Display Wall)
-  box(g, roomW, roomH, wallThick, wallMat, centerX, floorY + roomH / 2, zMin - wallThick / 2);
-  // South Wall (Z = zMax, Immersive Lounge Wall)
-  box(g, roomW, roomH, wallThick, wallMat, centerX, floorY + roomH / 2, zMax + wallThick / 2);
-  // East Wall (X = xMax, Large Window Wall)
-  box(g, wallThick, roomH, roomL, wallMat, xMax + wallThick / 2, floorY + roomH / 2, centerZ);
+  try {
+    // North Wall (Z = zMin, Main Display Wall)
+    box(g, roomW, roomH, wallThick, wallMat, centerX, floorY + roomH / 2, zMin - wallThick / 2);
+    // South Wall (Z = zMax, Immersive Lounge Wall)
+    box(g, roomW, roomH, wallThick, wallMat, centerX, floorY + roomH / 2, zMax + wallThick / 2);
+    // East Wall (X = xMax, Large Window Wall)
+    box(g, wallThick, roomH, roomL, wallMat, xMax + wallThick / 2, floorY + roomH / 2, centerZ);
 
-  // West Wall (X = xMin, Door Side adjoining main robotics lab)
-  // Split around the door opening at z = 4.15 to 5.45 (height 2.40m)
-  const doorZMin = 4.15;
-  const doorZMax = 5.45;
-  const doorH = 2.40;
-  // West Wall North portion (zMin to 4.15m)
-  const wNorthL = doorZMin - zMin; // 1.75m
-  box(g, wallThick, roomH, wNorthL, wallMat, xMin - wallThick / 2, floorY + roomH / 2, zMin + wNorthL / 2);
-  // West Wall South portion (5.45m to zMax)
-  const wSouthL = zMax - doorZMax; // 10.95m
-  box(g, wallThick, roomH, wSouthL, wallMat, xMin - wallThick / 2, floorY + roomH / 2, doorZMax + wSouthL / 2);
-  // Header beam above door (y = 2.45 to 3.65)
-  box(g, wallThick, roomH - doorH, doorZMax - doorZMin, wallMat, xMin - wallThick / 2, floorY + doorH + (roomH - doorH) / 2, (doorZMin + doorZMax) / 2);
+    // West Wall (X = xMin, Door Side adjoining main robotics lab)
+    // Split around the door opening at z = 4.15 to 5.45 (height 2.40m)
+    const doorZMin = 4.15;
+    const doorZMax = 5.45;
+    const doorH = 2.40;
+    // West Wall North portion (zMin to 4.15m)
+    const wNorthL = doorZMin - zMin; // 1.75m
+    box(g, wallThick, roomH, wNorthL, wallMat, xMin - wallThick / 2, floorY + roomH / 2, zMin + wNorthL / 2);
+    // West Wall South portion (5.45m to zMax)
+    const wSouthL = zMax - doorZMax; // 10.95m
+    box(g, wallThick, roomH, wSouthL, wallMat, xMin - wallThick / 2, floorY + roomH / 2, doorZMax + wSouthL / 2);
+    // Header beam above door (y = 2.45 to 3.65)
+    box(g, wallThick, roomH - doorH, doorZMax - doorZMin, wallMat, xMin - wallThick / 2, floorY + doorH + (roomH - doorH) / 2, (doorZMin + doorZMax) / 2);
 
-  // Skirting boards (Navy base with orange stripe)
-  const skH = 0.12;
-  // North skirting
-  box(g, roomW, skH, 0.03, navyMat, centerX, floorY + skH / 2, zMin + 0.015);
-  box(g, roomW, 0.015, 0.032, orangeMat, centerX, floorY + skH, zMin + 0.015);
-  // South skirting
-  box(g, roomW, skH, 0.03, navyMat, centerX, floorY + skH / 2, zMax - 0.015);
-  box(g, roomW, 0.015, 0.032, orangeMat, centerX, floorY + skH, zMax - 0.015);
-  // East skirting
-  box(g, 0.03, skH, roomL, navyMat, xMax - 0.015, floorY + skH / 2, centerZ);
-  box(g, 0.032, 0.015, roomL, orangeMat, xMax - 0.015, floorY + skH, centerZ);
-  // West skirting (split around door)
-  box(g, 0.03, skH, wNorthL, navyMat, xMin + 0.015, floorY + skH / 2, zMin + wNorthL / 2);
-  box(g, 0.032, 0.015, wNorthL, orangeMat, xMin + 0.015, floorY + skH, zMin + wNorthL / 2);
-  box(g, 0.03, skH, wSouthL, navyMat, xMin + 0.015, floorY + skH / 2, doorZMax + wSouthL / 2);
-  box(g, 0.032, 0.015, wSouthL, orangeMat, xMin + 0.015, floorY + skH, doorZMax + wSouthL / 2);
+    // Skirting boards (Navy base with orange stripe)
+    const skH = 0.12;
+    // North skirting
+    box(g, roomW, skH, 0.03, navyMat, centerX, floorY + skH / 2, zMin + 0.015);
+    box(g, roomW, 0.015, 0.032, orangeMat, centerX, floorY + skH, zMin + 0.015);
+    // South skirting
+    box(g, roomW, skH, 0.03, navyMat, centerX, floorY + skH / 2, zMax - 0.015);
+    box(g, roomW, 0.015, 0.032, orangeMat, centerX, floorY + skH, zMax - 0.015);
+    // East skirting
+    box(g, 0.03, skH, roomL, navyMat, xMax - 0.015, floorY + skH / 2, centerZ);
+    box(g, 0.032, 0.015, roomL, orangeMat, xMax - 0.015, floorY + skH, centerZ);
+    // West skirting (split around door)
+    box(g, 0.03, skH, wNorthL, navyMat, xMin + 0.015, floorY + skH / 2, zMin + wNorthL / 2);
+    box(g, 0.032, 0.015, wNorthL, orangeMat, xMin + 0.015, floorY + skH, zMin + wNorthL / 2);
+    box(g, 0.03, skH, wSouthL, navyMat, xMin + 0.015, floorY + skH / 2, doorZMax + wSouthL / 2);
+    box(g, 0.032, 0.015, wSouthL, orangeMat, xMin + 0.015, floorY + skH, doorZMax + wSouthL / 2);
+  } catch (err) {
+    console.error('[AR/VR Lab] Architectural walls build failed:', err);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 4. NORTH WALL: COMPLETE MAIN DISPLAY WALL & HIGH-RES MURAL
   // ═══════════════════════════════════════════════════════════════════════════
-  buildMainDisplayWall(g, centerX, zMin, floorY, roomW, roomH);
+  try {
+    buildMainDisplayWall(g, centerX, zMin, floorY, roomW, roomH);
+  } catch (err) {
+    console.error('[AR/VR Lab] Main Display Wall build failed:', err);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 5. EAST WALL: LARGE WINDOWS WITH ROLLER BLINDS & DAYLIGHT
   // ═══════════════════════════════════════════════════════════════════════════
-  buildEastWindowWall(g, xMax, centerZ, floorY, roomL, roomH);
+  try {
+    buildEastWindowWall(g, xMax, centerZ, floorY, roomL, roomH);
+  } catch (err) {
+    console.error('[AR/VR Lab] East Window Wall build failed:', err);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 6. WEST WALL: VR EQUIPMENT ZONE (PEGBOARD, BINS, GLASS RACK)
   // ═══════════════════════════════════════════════════════════════════════════
-  buildVrEquipmentZone(g, xMin, floorY, zMin, zMax);
+  try {
+    buildVrEquipmentZone(g, xMin, floorY, zMin, zMax);
+  } catch (err) {
+    console.error('[AR/VR Lab] VR Equipment Zone build failed:', err);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 7. SOUTH WALL: IMMERSIVE LOUNGE (TURF, BEAN BAGS, BOOKCASES, VR GRAPHIC)
   // ═══════════════════════════════════════════════════════════════════════════
-  buildImmersiveLounge(g, centerX, zMax, floorY, roomW);
+  try {
+    buildImmersiveLounge(g, centerX, zMax, floorY, roomW);
+  } catch (err) {
+    console.error('[AR/VR Lab] Immersive Lounge build failed:', err);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // 8. CENTER: TEACHING ZONE (TABLES, 24 NAVY SEAT CHAIRS, 1.8M AISLE)
   // ═══════════════════════════════════════════════════════════════════════════
-  buildTeachingZone(g, centerX, floorY);
+  try {
+    buildTeachingZone(g, centerX, floorY);
+  } catch (err) {
+    console.error('[AR/VR Lab] Teaching Zone build failed:', err);
+  }
 
   scene.add(g);
   return anim;
@@ -750,6 +782,200 @@ function buildImmersiveLounge(parent, cx, zMax, floorY, roomW) {
   createLeafyPlant(g, 5.60, 0, 0.65, { isTall: true });
 
   parent.add(g);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TEACHING ZONE (2 Blocks of Tables, 24 Navy Ergonomic Chairs, Wide Centre Aisle)
+// ─────────────────────────────────────────────────────────────────────────────
+export function buildTeachingZone(parent, cx, floorY) {
+  const g = new THREE.Group();
+  g.position.set(cx, floorY, 0);
+
+  // Two blocks of long study tables: Left Block (cx - 2.85m) and Right Block (cx + 2.85m)
+  // Centre aisle between them is ~2.4m - 3.0m wide (well above 1.5m minimum)
+  const blockOffsets = [-2.85, 2.85];
+  const rowZ = [5.60, 7.30, 9.00]; // 3 rows per block, 1.70m apart (above 1.0m minimum)
+  const tblW = 2.70, tblD = 0.82, tblH = 0.74;
+
+  const totalTables = blockOffsets.length * rowZ.length; // 6 tables
+  const totalChairs = totalTables * 4; // 24 chairs
+
+  // Shared reusable materials
+  const woodMat = M(0xd8a878, { roughness: 0.4 }); // Blonde honey wood tabletop
+  const blackTrimMat = M(0x111116);
+  const powerInsertMat = M(0x111115, { metalness: 0.8 });
+  const legMat = M(0x18181c, { roughness: 0.45, metalness: 0.7 });
+  const navySeatMat = M(0x14284b, { roughness: 0.65 }); // Deep navy cushion
+  const blackFrameMat = M(0x18181c, { roughness: 0.45, metalness: 0.7 });
+
+  // Geometries for InstancedMesh
+  const tableTopGeom = new THREE.BoxGeometry(tblW, 0.045, tblD);
+  const tableTrimGeom = new THREE.BoxGeometry(tblW + 0.01, 0.01, tblD + 0.01);
+  const powerGeom = new THREE.BoxGeometry(0.35, 0.005, 0.14);
+  const tableLegGeom = new THREE.BoxGeometry(0.045, tblH - 0.045, 0.045);
+  const tableBraceGeom = new THREE.BoxGeometry(0.03, 0.03, tblD - 0.16);
+
+  const seatGeom = new THREE.BoxGeometry(0.44, 0.05, 0.42);
+  const backGeom = new THREE.BoxGeometry(0.42, 0.38, 0.03);
+  const chairLegGeom = new THREE.CylinderGeometry(0.014, 0.012, 0.44, 8);
+
+  // Instanced Meshes for maximum mobile performance
+  const tableTopMesh = new THREE.InstancedMesh(tableTopGeom, woodMat, totalTables);
+  const tableTrimMesh = new THREE.InstancedMesh(tableTrimGeom, blackTrimMat, totalTables);
+  const powerMesh = new THREE.InstancedMesh(powerGeom, powerInsertMat, totalTables);
+  const tableLegMesh = new THREE.InstancedMesh(tableLegGeom, legMat, totalTables * 4);
+  const tableBraceMesh = new THREE.InstancedMesh(tableBraceGeom, legMat, totalTables * 2);
+
+  const chairSeatMesh = new THREE.InstancedMesh(seatGeom, navySeatMat, totalChairs);
+  const chairBackMesh = new THREE.InstancedMesh(backGeom, blackFrameMat, totalChairs);
+  const chairLegMesh = new THREE.InstancedMesh(chairLegGeom, blackFrameMat, totalChairs * 4);
+
+  const dummy = new THREE.Object3D();
+  let tableIdx = 0;
+  let legIdx = 0;
+  let braceIdx = 0;
+  let chairIdx = 0;
+  let chairLegIdx = 0;
+
+  // Soft contact shadow plane material under tables
+  const shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.18,
+    depthWrite: false,
+  });
+  const shadowGeom = new THREE.PlaneGeometry(tblW + 0.2, tblD + 0.2);
+
+  blockOffsets.forEach((bx) => {
+    rowZ.forEach((rz) => {
+      // 1. Table Top
+      dummy.position.set(bx, tblH - 0.022, rz);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      tableTopMesh.setMatrixAt(tableIdx, dummy.matrix);
+
+      // Table Bevel Trim
+      dummy.position.set(bx, tblH - 0.045, rz);
+      dummy.updateMatrix();
+      tableTrimMesh.setMatrixAt(tableIdx, dummy.matrix);
+
+      // Power/Data Module in center of desk
+      dummy.position.set(bx, tblH + 0.003, rz);
+      dummy.updateMatrix();
+      powerMesh.setMatrixAt(tableIdx, dummy.matrix);
+
+      tableIdx++;
+
+      // 4 Table Legs & Side Braces
+      [-tblW / 2 + 0.1, tblW / 2 - 0.1].forEach((lx) => {
+        [-tblD / 2 + 0.08, tblD / 2 - 0.08].forEach((lz) => {
+          dummy.position.set(bx + lx, (tblH - 0.045) / 2, rz + lz);
+          dummy.rotation.set(0, 0, 0);
+          dummy.updateMatrix();
+          tableLegMesh.setMatrixAt(legIdx++, dummy.matrix);
+        });
+        // Side leg brace
+        dummy.position.set(bx + lx, tblH * 0.35, rz);
+        dummy.rotation.set(0, 0, 0);
+        dummy.updateMatrix();
+        tableBraceMesh.setMatrixAt(braceIdx++, dummy.matrix);
+      });
+
+      // Shadow plane
+      const shadow = new THREE.Mesh(shadowGeom, shadowMat);
+      shadow.rotation.x = -Math.PI / 2;
+      shadow.position.set(bx, 0.052, rz);
+      g.add(shadow);
+
+      // 4 Ergonomic Task Chairs per table (2 facing North, 2 facing South)
+      [-tblW * 0.28, tblW * 0.28].forEach((cxPos) => {
+        const chairConfigs = [
+          { zOff: tblD / 2 + 0.28, yaw: 0 },
+          { zOff: -tblD / 2 - 0.28, yaw: Math.PI },
+        ];
+        chairConfigs.forEach(({ zOff, yaw }) => {
+          const chX = bx + cxPos;
+          const chZ = rz + zOff;
+
+          // Seat cushion
+          dummy.position.set(chX, 0.44, chZ);
+          dummy.rotation.set(0, yaw, 0);
+          dummy.scale.set(1, 1, 1);
+          dummy.updateMatrix();
+          chairSeatMesh.setMatrixAt(chairIdx, dummy.matrix);
+
+          // Backrest (offset relative to chair center)
+          const backOffsetZ = yaw === 0 ? -0.20 : 0.20;
+          dummy.position.set(chX, 0.70, chZ + backOffsetZ);
+          dummy.rotation.set(yaw === 0 ? -0.08 : 0.08, yaw, 0);
+          dummy.updateMatrix();
+          chairBackMesh.setMatrixAt(chairIdx, dummy.matrix);
+
+          chairIdx++;
+
+          // 4 Tubular legs per chair
+          const legOffsets = [
+            { lx: -0.18, lz: -0.17 },
+            { lx: 0.18, lz: -0.17 },
+            { lx: -0.18, lz: 0.17 },
+            { lx: 0.18, lz: 0.17 },
+          ];
+          legOffsets.forEach(({ lx, lz }) => {
+            const rx = yaw === 0 ? lx : -lx;
+            const rzLeg = yaw === 0 ? lz : -lz;
+            dummy.position.set(chX + rx, 0.22, chZ + rzLeg);
+            dummy.rotation.set(0, 0, 0);
+            dummy.updateMatrix();
+            chairLegMesh.setMatrixAt(chairLegIdx++, dummy.matrix);
+          });
+        });
+      });
+    });
+  });
+
+  tableTopMesh.instanceMatrix.needsUpdate = true;
+  tableTrimMesh.instanceMatrix.needsUpdate = true;
+  powerMesh.instanceMatrix.needsUpdate = true;
+  tableLegMesh.instanceMatrix.needsUpdate = true;
+  tableBraceMesh.instanceMatrix.needsUpdate = true;
+  chairSeatMesh.instanceMatrix.needsUpdate = true;
+  chairBackMesh.instanceMatrix.needsUpdate = true;
+  chairLegMesh.instanceMatrix.needsUpdate = true;
+
+  g.add(tableTopMesh);
+  g.add(tableTrimMesh);
+  g.add(powerMesh);
+  g.add(tableLegMesh);
+  g.add(tableBraceMesh);
+  g.add(chairSeatMesh);
+  g.add(chairBackMesh);
+  g.add(chairLegMesh);
+
+  parent.add(g);
+  return g;
+}
+
+/** Ergonomic Student Task Chair with Perforated Back and NAVY Seat Cushion */
+export function createNavySeatChair(parent, x, y, z, yaw = 0) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  g.rotation.y = yaw;
+
+  const navySeatMat = M(0x14284b, { roughness: 0.65 });
+  const blackFrameMat = M(0x18181c, { roughness: 0.45, metalness: 0.7 });
+
+  box(g, 0.44, 0.05, 0.42, navySeatMat, 0, 0.44, 0);
+  const backMesh = box(g, 0.42, 0.38, 0.03, blackFrameMat, 0, 0.70, -0.20);
+  backMesh.rotation.x = -0.08;
+
+  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, -0.18, 0.22, -0.17, 8);
+  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, 0.18, 0.22, -0.17, 8);
+  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, -0.18, 0.22, 0.17, 8);
+  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, 0.18, 0.22, 0.17, 8);
+
+  parent.add(g);
+  return g;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

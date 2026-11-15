@@ -175,6 +175,9 @@ html, body {
 .action-prompt:active {
   transform: translateX(-50%) scale(0.97);
 }
+#zone-card.visible ~ .action-prompt {
+  bottom: calc(min(28vh, 180px) + clamp(26px, 4vh, 44px) + var(--safe-b));
+}
 .action-prompt.hidden {
   display: none !important;
 }
@@ -260,6 +263,25 @@ html, body {
 .info-desc {
   font-size: clamp(0.8rem, 2vw, 0.95rem);
   line-height: 1.5; opacity: 0.9;
+}
+.info-hint {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: clamp(0.72rem, 1.6vw, 0.82rem);
+  color: rgba(255, 255, 255, 0.70);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  user-select: none;
+}
+.info-hint b {
+  color: var(--orange);
+  background: rgba(255, 255, 255, 0.14);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
 }
 
 /* ── Minimap ── */
