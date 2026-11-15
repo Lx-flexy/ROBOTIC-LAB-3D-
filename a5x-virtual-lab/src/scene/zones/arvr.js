@@ -362,7 +362,10 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
   // 1. High-Resolution Painted Wall Texture (Aspect Ratio Matched 14.00m x 3.60m)
   const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   const W = isMobile ? 2048 : 4096;
-  const H = Math.round(W / (roomW / roomH)); // Exact 1:1 true aspect ratio!
+  const H = isMobile ? 1024 : 2048;
+  const scale = W / 4096;
+
+  const muralBlocks = [];
 
   const muralTex = canvasTex(W, H, (ctx) => {
     // Warm peach/cream base wall paint
@@ -379,14 +382,14 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
     const panelW = Math.round(W * (2.25 / 14.00));
     ctx.save();
     ctx.shadowColor = 'rgba(20, 40, 75, 0.35)';
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetX = 8;
+    ctx.shadowBlur = 18 * scale;
+    ctx.shadowOffsetX = 8 * scale;
     ctx.fillStyle = '#14284b';
     ctx.beginPath();
     ctx.moveTo(0, 0);
-    ctx.lineTo(panelW - 12, 0);
-    ctx.lineTo(panelW + 36, H * 0.46);
-    ctx.lineTo(panelW - 24, H);
+    ctx.lineTo(panelW - 12 * scale, 0);
+    ctx.lineTo(panelW + 36 * scale, H * 0.46);
+    ctx.lineTo(panelW - 24 * scale, H);
     ctx.lineTo(0, H);
     ctx.closePath();
     ctx.fill();
@@ -394,76 +397,171 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
 
     // Orange diagonal accent stripe
     ctx.strokeStyle = '#ff7a00';
-    ctx.lineWidth = 14;
+    ctx.lineWidth = Math.max(6, Math.round(14 * scale));
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    ctx.moveTo(panelW - 12, 0);
-    ctx.lineTo(panelW + 36, H * 0.46);
-    ctx.lineTo(panelW - 24, H);
+    ctx.moveTo(panelW - 12 * scale, 0);
+    ctx.lineTo(panelW + 36 * scale, H * 0.46);
+    ctx.lineTo(panelW - 24 * scale, H);
     ctx.stroke();
 
-    // 4 Stacked Icons on Navy Panel
-    const panelItems = [
-      { icon: 'headset', label: 'Virtual\nReality' },
-      { icon: 'ar', label: 'Augmented\nReality' },
-      { icon: 'circle360', label: '360°\nImmersive\nLearning' },
-      { icon: 'cube3d', label: '3D\nVisualization' },
-    ];
-    const iconCx = panelW * 0.46;
-    panelItems.forEach((item, idx) => {
-      const iy = H * 0.16 + idx * (H * 0.22);
-      drawPanelVectorIcon(ctx, iconCx, iy, item.icon);
+    // Strictly reset canvas shadow state before drawing panel contents
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
 
+    // 4 Stacked Items on Navy Panel (Equal vertical spacing, text drawn ONCE, 0 overlap)
+    const panelItems = [
+      { id: 'Panel-VR', icon: 'headset', label: ['Virtual', 'Reality'], y: 220 },
+      { id: 'Panel-AR', icon: 'ar', label: ['Augmented', 'Reality'], y: 660 },
+      { id: 'Panel-360', icon: 'circle360', label: ['360° Immersive', 'Learning'], y: 1100 },
+      { id: 'Panel-3D', icon: 'cube3d', label: ['3D', 'Visualization'], y: 1540 },
+    ];
+    const iconCx = Math.round(panelW * 0.46);
+    const itemFontSize = Math.round(36 * scale);
+    ctx.font = `bold ${itemFontSize}px 'Segoe UI', system-ui, sans-serif`;
+
+    panelItems.forEach((item) => {
+      const iy = Math.round(item.y * scale);
+      const iconH = Math.round(60 * scale);
+      drawPanelVectorIcon(ctx, iconCx, iy + iconH / 2, item.icon, scale);
+
+      const labelTop = iy + iconH + Math.round(16 * scale);
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(W * 0.0095)}px 'Segoe UI', system-ui, sans-serif`;
+      ctx.font = `bold ${itemFontSize}px 'Segoe UI', system-ui, sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      const lines = item.label.split('\n');
-      lines.forEach((l, li) => {
-        ctx.fillText(l, iconCx, iy + 36 + li * 22);
+
+      let maxTextW = 0;
+      item.label.forEach((line, li) => {
+        const lineY = labelTop + li * Math.round(44 * scale);
+        ctx.fillText(line, iconCx, lineY);
+        const tw = ctx.measureText(line).width;
+        if (tw > maxTextW) maxTextW = tw;
+      });
+
+      const blockW = Math.max(iconH, maxTextW);
+      const blockH = iconH + Math.round(16 * scale) + item.label.length * Math.round(44 * scale);
+      muralBlocks.push({
+        id: item.id,
+        x1: iconCx - blockW / 2,
+        y1: iy,
+        x2: iconCx + blockW / 2,
+        y2: iy + blockH,
       });
     });
 
-    // ── TOP-CENTER TITLE HEADER (Upper Wall Portion, 3D Y ~ 2.75m to 3.45m) ──
-    const midX = W * 0.535;
-    const topY = Math.round(H * 0.128); // 3D Y ~ 3.14m
+    // ── TOP-CENTER TITLE HEADER (Row 1: Title & Logos, Row 2: Tagline) ──
+    const midX = Math.round(W * 0.535);
+    const topY = Math.round(185 * scale); // Title baseline Y
+    const logoR = Math.round(38 * scale);
 
     // (A) Left: Orange sketch-style isometric cube with dashed circle
-    drawSketchCubeWithCircle(ctx, midX - W * 0.24, topY);
+    const leftCubeX = Math.round(midX - 980 * scale);
+    const cubeRad = Math.round(70 * scale);
+    drawSketchCubeWithCircle(ctx, leftCubeX, topY, cubeRad, Math.round(36 * scale));
+    muralBlocks.push({
+      id: 'SketchCube-Left',
+      x1: leftCubeX - cubeRad,
+      y1: topY - cubeRad,
+      x2: leftCubeX + cubeRad,
+      y2: topY + cubeRad,
+    });
 
     // (B) Center: SRI Logo + Tree Emblem
-    drawSriLotusEmblem(ctx, midX - W * 0.095, topY, Math.round(W * 0.034));
+    const logoX = Math.round(midX - 390 * scale);
+    drawSriLotusEmblem(ctx, logoX, topY, logoR);
+    muralBlocks.push({
+      id: 'SRI-Logo',
+      x1: logoX - Math.round(55 * scale),
+      y1: topY - Math.round(52 * scale),
+      x2: logoX + Math.round(55 * scale),
+      y2: topY + Math.round(58 * scale),
+    });
 
     // Thin vertical divider line
+    const divX = Math.round(midX - 90 * scale);
+    const divW = Math.max(3, Math.round(4 * scale));
+    const divH = Math.round(70 * scale);
     ctx.fillStyle = '#ff7a00';
-    ctx.fillRect(midX - W * 0.022, topY - 35, 4, 70);
+    ctx.fillRect(divX, topY - divH / 2, divW, divH);
+    muralBlocks.push({
+      id: 'Title-Divider',
+      x1: divX,
+      y1: topY - divH / 2,
+      x2: divX + divW,
+      y2: topY + divH / 2,
+    });
 
     // "AR / VR LAB" Title (AR / VR in navy italic bold, LAB in orange)
+    const titleFontSz = Math.round(112 * scale);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.font = `italic 900 ${Math.round(W * 0.028)}px 'Segoe UI', system-ui, sans-serif`;
+    ctx.font = `italic 900 ${titleFontSz}px 'Segoe UI', system-ui, sans-serif`;
     ctx.fillStyle = '#14284b';
-    ctx.fillText('AR / VR ', midX - W * 0.008, topY - 6);
+    const titleStartX = Math.round(midX - 35 * scale);
+    ctx.fillText('AR / VR ', titleStartX, topY - Math.round(6 * scale));
     const arw = ctx.measureText('AR / VR ').width;
     ctx.fillStyle = '#ff7a00';
-    ctx.fillText('LAB', midX - W * 0.008 + arw, topY - 6);
+    ctx.fillText('LAB', titleStartX + arw, topY - Math.round(6 * scale));
+    const labw = ctx.measureText('LAB').width;
+    muralBlocks.push({
+      id: 'Title-Text',
+      x1: titleStartX,
+      y1: topY - titleFontSz / 2,
+      x2: titleStartX + arw + labw,
+      y2: topY + titleFontSz / 2,
+    });
 
-    // Sub-motto: "— EXPLORE • CREATE • EXPERIENCE • BUILD —" (3D Y ~ 2.82m)
-    const taglineY = Math.round(H * 0.217);
+    // Sub-motto: "— EXPLORE • CREATE • EXPERIENCE • BUILD —" (Row 2)
+    // Placed at Y = 430 * scale: >= 0.32m below lowest point of SRI logo, and >= 0.31m above TV top!
+    const taglineY = Math.round(430 * scale);
+    const taglineFontSz = Math.round(42 * scale);
+    const taglineText = '—   EXPLORE   •   CREATE   •   EXPERIENCE   •   BUILD   —';
+    ctx.font = `900 ${taglineFontSz}px 'Segoe UI', system-ui, sans-serif`;
+    const tagW = ctx.measureText(taglineText).width;
+    const tagX = Math.round(midX + 130 * scale);
     ctx.fillStyle = '#14284b';
-    ctx.font = `900 ${Math.round(W * 0.0105)}px 'Segoe UI', system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('—   EXPLORE   •   CREATE   •   EXPERIENCE   •   BUILD   —', midX + W * 0.032, taglineY);
+    ctx.fillText(taglineText, tagX, taglineY);
+    muralBlocks.push({
+      id: 'Tagline',
+      x1: tagX - tagW / 2,
+      y1: taglineY - taglineFontSz / 2,
+      x2: tagX + tagW / 2,
+      y2: taglineY + taglineFontSz / 2,
+    });
 
     // (C) Right: Orange sketch cube
-    drawSketchCubeWithCircle(ctx, midX + W * 0.22, topY);
+    const rightCubeX = Math.round(midX + 820 * scale);
+    drawSketchCubeWithCircle(ctx, rightCubeX, topY, cubeRad, Math.round(36 * scale));
+    muralBlocks.push({
+      id: 'SketchCube-Right',
+      x1: rightCubeX - cubeRad,
+      y1: topY - cubeRad,
+      x2: rightCubeX + cubeRad,
+      y2: topY + cubeRad,
+    });
 
-    // (D) Right: Navy line-art person wearing VR headset
-    drawVrPersonSilhouette(ctx, midX + W * 0.31, topY);
+    // (D) Right: Navy line-art person wearing VR headset (pulled inward with ample margin)
+    const vrPersonX = Math.round(3450 * scale);
+    drawVrPersonSilhouette(ctx, vrPersonX, topY, scale);
+    muralBlocks.push({
+      id: 'VR-Person',
+      x1: vrPersonX - Math.round(60 * scale),
+      y1: topY - Math.round(60 * scale),
+      x2: vrPersonX + Math.round(100 * scale),
+      y2: topY + Math.round(70 * scale),
+    });
+
+    // Run safe-area validation
+    checkMuralSafeAreas(W, H, muralBlocks);
   });
 
+  muralTex.anisotropy = 16;
   const muralMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(roomW, roomH),
     new THREE.MeshBasicMaterial({ map: muralTex })
@@ -473,7 +571,7 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
 
   // 2. Center Wall-Mounted 75" Smart TV Display (3.00m x 1.68m, 16:9)
   const tvW = 3.00, tvH = 1.68;
-  const tvY = 1.62; // TV center: bottom at 0.78m, top at 2.46m (leaves 0.35m gap below tagline!)
+  const tvY = 1.62; // TV center: bottom at 0.78m, top at 2.46m; soundbar at 2.50m (>= 0.30m gap below tagline!)
 
   // Soft drop shadow behind TV on wall
   const tvShadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25, depthWrite: false });
@@ -499,50 +597,63 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
     ctx.closePath();
     ctx.fill();
 
-    // Top SRI Logo Emblem
-    drawSriLotusEmblem(ctx, 512, 85, 26);
+    // Digital clock top right with margin
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.90)';
+    ctx.font = "600 24px 'Segoe UI', system-ui, sans-serif";
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText('10:24', 960, 36);
 
-    // Title text
+    // Larger Top SRI Logo Emblem
+    drawSriLotusEmblem(ctx, 512, 75, 30);
+
+    // Title text with clear vertical gap
     ctx.fillStyle = '#ffffff';
-    ctx.font = `italic 700 42px 'Segoe UI', system-ui, sans-serif`;
+    ctx.font = "italic 700 38px 'Segoe UI', system-ui, sans-serif";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('AR / VR Lab', 512, 165);
+    ctx.fillText('AR / VR Lab', 512, 175);
 
-    // Digital clock top right
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.font = '600 24px system-ui, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText('10:24', 980, 45);
-
-    // 4 White Rounded App Cards
+    // 4 App Tiles (approx 20% to 22% of screen width with equal gaps, large bold icons & labels)
     const cards = [
       { icon: 'headset', name: 'VR Suite' },
       { icon: 'ar', name: 'AR Scan' },
       { icon: 'circle360', name: '360° Lab' },
       { icon: 'cube3d', name: '3D Spatial' },
     ];
+    const tileW = 205;
+    const tileH = 145;
+    const tileY = 260;
+    const tileGap = 40;
+    const startX = 40;
+
     cards.forEach((c, i) => {
-      const bx = 245 + i * 178;
-      const by = 265;
+      const bx = startX + i * (tileW + tileGap);
+      const cx = bx + tileW / 2;
+
       // White rounded background card
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.94)';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.96)';
       ctx.beginPath();
-      ctx.roundRect(bx - 65, by, 130, 115, 16);
+      if (ctx.roundRect) {
+        ctx.roundRect(bx, tileY, tileW, tileH, 14);
+      } else {
+        ctx.rect(bx, tileY, tileW, tileH);
+      }
       ctx.fill();
 
-      // Card Icon
-      drawPanelVectorIcon(ctx, bx, by + 46, c.icon);
+      // Card Icon (Large, bold, crisp)
+      drawPanelVectorIcon(ctx, cx, tileY + 54, c.icon, 1.25);
 
+      // Card Label underneath with clear gap
       ctx.fillStyle = '#14284b';
-      ctx.font = 'bold 16px system-ui, sans-serif';
+      ctx.font = "bold 17px 'Segoe UI', system-ui, sans-serif";
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(c.name, bx, by + 94);
+      ctx.fillText(c.name, cx, tileY + 112);
     });
 
     // Pagination dots at bottom
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.55)';
     for (let d = 0; d < 5; d++) {
       ctx.beginPath();
       ctx.arc(472 + d * 20, 520, d === 0 ? 5 : 3.5, 0, Math.PI * 2);
@@ -654,8 +765,8 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
     createSoftInteriorWindow(g, gx, 1.625, 0.02);
   });
 
-  // 6. Tall Floor Plant in Front of Left Navy Panel
-  createLeafyPlant(g, -5.80, 0, 0.50, { isTall: true });
+  // 6. Tall Floor Plant in Corner away from Left Navy Panel (100% visible panel text)
+  createLeafyPlant(g, -6.45, 0, 0.40, { isTall: true });
 
   parent.add(g);
 }
@@ -1353,7 +1464,7 @@ function createWallMountedLoungeShelfUnit(parent, x, y, z) {
   return g;
 }
 
-/** Multi-Leaved Low-Poly Leafy Plant (Broad arching leaves, zero spheres) */
+/** Multi-Leaved Low-Poly Leafy Plant (Broad arching leaves, zero sticks/spheres, 2-3cm pot rim) */
 function createLeafyPlant(parent, x, y, z, opts = {}) {
   const g = new THREE.Group();
   g.position.set(x, y, z);
@@ -1365,12 +1476,13 @@ function createLeafyPlant(parent, x, y, z, opts = {}) {
   const potH = isTall ? 0.38 : 0.09;
   const potMat = M(opts.potColor || 0xf8fafc, { roughness: 0.3 });
 
-  // Ceramic Planter Pot
+  // Ceramic Planter Pot with 2.5cm realistic thick rim lip
+  const rimLip = isTall ? 0.032 : 0.016;
   cyl(g, potR, potR * 0.85, potH, potMat, 0, potH / 2, 0, 16);
-  cyl(g, potR * 1.04, potR * 1.04, potH * 0.12, potMat, 0, potH - potH * 0.06, 0, 16);
-  cyl(g, potR * 0.92, potR * 0.92, 0.02, M(0x3e2723, { roughness: 0.9 }), 0, potH * 0.92, 0, 12);
+  cyl(g, potR + rimLip, potR + rimLip, potH * 0.16, potMat, 0, potH - potH * 0.08, 0, 16);
+  cyl(g, potR * 0.92, potR * 0.92, 0.02, M(0x271c19, { roughness: 0.9 }), 0, potH * 0.92, 0, 12);
 
-  // Leafy Foliage (radiating arching elongated leaves)
+  // Leafy Foliage (radiating arching elongated leaf blades with contour)
   const leafCount = isTall ? 14 : 9;
   const leafMat1 = M(0x2e7d32, { roughness: 0.65, side: THREE.DoubleSide });
   const leafMat2 = M(0x388e3c, { roughness: 0.60, side: THREE.DoubleSide });
@@ -1381,28 +1493,31 @@ function createLeafyPlant(parent, x, y, z, opts = {}) {
     leafGroup.rotation.y = angle;
     leafGroup.position.set(0, potH * 0.92, 0);
 
-    const leafL = isTall ? (0.45 + (i % 3) * 0.12) : (0.14 + (i % 3) * 0.04);
-    const leafW = isTall ? 0.16 : 0.065;
-    const droop = isTall ? (0.35 + (i % 4) * 0.15) : (0.45 + (i % 3) * 0.15);
+    const leafL = isTall ? (0.48 + (i % 3) * 0.10) : (0.15 + (i % 3) * 0.03);
+    const leafW = isTall ? 0.20 : 0.085;
+    const droop = isTall ? (0.35 + (i % 4) * 0.15) : (0.40 + (i % 3) * 0.12);
 
-    // Arching leaf blade geometry
-    const leafGeom = new THREE.PlaneGeometry(leafW, leafL, 3, 5);
+    // Contoured arching leaf blade shape
+    const leafShape = new THREE.Shape();
+    leafShape.moveTo(0, 0);
+    leafShape.quadraticCurveTo(leafW * 0.55, leafL * 0.35, leafW * 0.48, leafL * 0.70);
+    leafShape.quadraticCurveTo(leafW * 0.20, leafL * 0.95, 0, leafL);
+    leafShape.quadraticCurveTo(-leafW * 0.20, leafL * 0.95, -leafW * 0.48, leafL * 0.70);
+    leafShape.quadraticCurveTo(-leafW * 0.55, leafL * 0.35, 0, 0);
+
+    const leafGeom = new THREE.ShapeGeometry(leafShape, 6);
     const lPos = leafGeom.attributes.position;
     for (let k = 0; k < lPos.count; k++) {
       const ly = lPos.getY(k);
-      const normY = (ly + leafL / 2) / leafL;
+      const normY = Math.max(0, Math.min(1, ly / leafL));
       const arch = Math.pow(normY, 1.8) * droop;
       lPos.setZ(k, arch);
     }
     leafGeom.computeVertexNormals();
 
     const leafMesh = new THREE.Mesh(leafGeom, i % 2 === 0 ? leafMat1 : leafMat2);
-    leafMesh.position.set(0, leafL / 2, 0);
-    leafMesh.rotation.x = 0.45 + (i % 3) * 0.2;
+    leafMesh.rotation.x = 0.52 + (i % 3) * 0.18;
     leafGroup.add(leafMesh);
-
-    // Stem
-    cyl(leafGroup, 0.005, 0.005, leafL * 0.4, M(0x1b5e20), 0, leafL * 0.2, 0, 6);
 
     g.add(leafGroup);
   }
@@ -1415,22 +1530,24 @@ function createLeafyPlant(parent, x, y, z, opts = {}) {
 function createTrailingIvyPlant(parent, x, y, z) {
   const g = new THREE.Group();
   g.position.set(x, y, z);
-  cyl(g, 0.07, 0.055, 0.08, M(0xffffff, { roughness: 0.3 }), 0, 0.04, 0, 12);
+  cyl(g, 0.07, 0.055, 0.08, M(0xffffff, { roughness: 0.3 }), 0, 0.04, 0, 14);
+  cyl(g, 0.082, 0.082, 0.018, M(0xffffff, { roughness: 0.3 }), 0, 0.075, 0, 14);
+  cyl(g, 0.065, 0.065, 0.015, M(0x271c19, { roughness: 0.9 }), 0, 0.075, 0, 12);
 
   const leafMat = M(0x2e7d32, { roughness: 0.65, side: THREE.DoubleSide });
-  for (let a = 0; a < 6; a++) {
-    const ang = (a * Math.PI * 2) / 6;
-    const l = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.09), leafMat);
-    l.position.set(Math.cos(ang) * 0.04, 0.08, Math.sin(ang) * 0.04);
-    l.rotation.x = 0.5;
+  for (let a = 0; a < 8; a++) {
+    const ang = (a * Math.PI * 2) / 8;
+    const l = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 0.11), leafMat);
+    l.position.set(Math.cos(ang) * 0.045, 0.08, Math.sin(ang) * 0.045);
+    l.rotation.x = 0.55;
     l.rotation.y = ang;
     g.add(l);
   }
   // Cascading ivy vine clusters hanging down the front/side
   [-0.04, 0.0, 0.04].forEach((vx, vi) => {
-    const vineLen = 0.25 + vi * 0.12;
+    const vineLen = 0.22 + vi * 0.08;
     for (let vy = 0.04; vy >= -vineLen; vy -= 0.05) {
-      const l = new THREE.Mesh(new THREE.PlaneGeometry(0.045, 0.06), leafMat);
+      const l = new THREE.Mesh(new THREE.PlaneGeometry(0.065, 0.08), leafMat);
       l.position.set(vx + Math.sin(vy * 10) * 0.02, vy, 0.08);
       l.rotation.z = Math.sin(vy * 8) * 0.3;
       g.add(l);
@@ -1822,24 +1939,23 @@ function drawSriLotusEmblem(ctx, cx, cy, r) {
 }
 
 /** Orange Sketch-Style Isometric Cube with Dashed Orbital Circle */
-function drawSketchCubeWithCircle(ctx, cx, cy) {
+function drawSketchCubeWithCircle(ctx, cx, cy, radius = 70, s = 36) {
   ctx.save();
   // Dashed orbital circle
   ctx.strokeStyle = 'rgba(255, 122, 0, 0.45)';
-  ctx.lineWidth = 4;
-  ctx.setLineDash([12, 10]);
+  ctx.lineWidth = Math.max(2, Math.round(radius * 0.05));
+  ctx.setLineDash([8, 8]);
   ctx.beginPath();
-  ctx.arc(cx, cy, 110, 0, Math.PI * 2);
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
 
   // Isometric orange cube
   ctx.strokeStyle = '#ff7a00';
-  ctx.lineWidth = 8;
+  ctx.lineWidth = Math.max(3, Math.round(s * 0.12));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
-  const s = 55;
   const dx = s * Math.cos(Math.PI / 6);
   const dy = s * Math.sin(Math.PI / 6);
 
@@ -1873,94 +1989,139 @@ function drawSketchCubeWithCircle(ctx, cx, cy) {
 }
 
 /** Navy Line-Art Silhouette of Person Wearing VR Headset */
-function drawVrPersonSilhouette(ctx, cx, cy) {
+function drawVrPersonSilhouette(ctx, cx, cy, scale = 1.0) {
   ctx.save();
   ctx.strokeStyle = '#14284b';
-  ctx.lineWidth = 7;
+  ctx.lineWidth = Math.max(3, Math.round(6 * scale));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
+  const rHead = 38 * scale;
   // Head outline
   ctx.beginPath();
-  ctx.arc(cx, cy - 25, 48, 0, Math.PI * 2);
+  ctx.arc(cx, cy - 20 * scale, rHead, 0, Math.PI * 2);
   ctx.stroke();
 
   // VR Headset on face
   ctx.fillStyle = '#14284b';
   ctx.beginPath();
-  ctx.roundRect(cx - 30, cy - 42, 65, 32, 10);
+  if (ctx.roundRect) {
+    ctx.roundRect(cx - 24 * scale, cy - 34 * scale, 52 * scale, 26 * scale, 8 * scale);
+  } else {
+    ctx.rect(cx - 24 * scale, cy - 34 * scale, 52 * scale, 26 * scale);
+  }
   ctx.fill();
 
   // Headband
   ctx.beginPath();
-  ctx.moveTo(cx - 30, cy - 26);
-  ctx.lineTo(cx - 50, cy - 22);
+  ctx.moveTo(cx - 24 * scale, cy - 21 * scale);
+  ctx.lineTo(cx - 40 * scale, cy - 18 * scale);
   ctx.stroke();
 
   // Neck & Shoulders
   ctx.beginPath();
-  ctx.moveTo(cx - 15, cy + 23);
-  ctx.lineTo(cx - 40, cy + 65);
-  ctx.lineTo(cx + 40, cy + 65);
-  ctx.lineTo(cx + 15, cy + 23);
+  ctx.moveTo(cx - 12 * scale, cy + 18 * scale);
+  ctx.lineTo(cx - 32 * scale, cy + 52 * scale);
+  ctx.lineTo(cx + 32 * scale, cy + 52 * scale);
+  ctx.lineTo(cx + 12 * scale, cy + 18 * scale);
   ctx.stroke();
 
   // Orange holographic wireframe cube in front of headset
   ctx.strokeStyle = '#ff7a00';
-  ctx.lineWidth = 5;
-  ctx.strokeRect(cx + 52, cy - 40, 42, 42);
+  ctx.lineWidth = Math.max(2, Math.round(4 * scale));
+  ctx.strokeRect(cx + 42 * scale, cy - 32 * scale, 34 * scale, 34 * scale);
   ctx.restore();
 }
 
-/** Vector Icons for the Navy Panel */
-function drawPanelVectorIcon(ctx, cx, cy, type) {
+/** Vector Icons for the Navy Panel and TV Screen */
+function drawPanelVectorIcon(ctx, cx, cy, type, scale = 1.0) {
   ctx.save();
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 5;
+  ctx.lineWidth = Math.max(3, Math.round(4.5 * scale));
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 
   if (type === 'headset') {
-    ctx.strokeRect(cx - 28, cy - 14, 56, 28);
+    const hw = 26 * scale, hh = 14 * scale;
+    ctx.strokeRect(cx - hw, cy - hh, hw * 2, hh * 2);
     ctx.beginPath();
-    ctx.moveTo(cx - 28, cy);
-    ctx.lineTo(cx - 42, cy);
-    ctx.moveTo(cx + 28, cy);
-    ctx.lineTo(cx + 42, cy);
+    ctx.moveTo(cx - hw, cy);
+    ctx.lineTo(cx - hw - 12 * scale, cy);
+    ctx.moveTo(cx + hw, cy);
+    ctx.lineTo(cx + hw + 12 * scale, cy);
     ctx.stroke();
   } else if (type === 'ar') {
-    // AR Frame corners
-    const sz = 24;
+    const sz = 20 * scale;
+    const cr = 8 * scale;
     ctx.beginPath();
     // Top-left
-    ctx.moveTo(cx - sz, cy - sz + 12); ctx.lineTo(cx - sz, cy - sz); ctx.lineTo(cx - sz + 12, cy - sz);
+    ctx.moveTo(cx - sz, cy - sz + cr); ctx.lineTo(cx - sz, cy - sz); ctx.lineTo(cx - sz + cr, cy - sz);
     // Top-right
-    ctx.moveTo(cx + sz - 12, cy - sz); ctx.lineTo(cx + sz, cy - sz); ctx.lineTo(cx + sz, cy - sz + 12);
+    ctx.moveTo(cx + sz - cr, cy - sz); ctx.lineTo(cx + sz, cy - sz); ctx.lineTo(cx + sz, cy - sz + cr);
     // Bottom-left
-    ctx.moveTo(cx - sz, cy + sz - 12); ctx.lineTo(cx - sz, cy + sz); ctx.lineTo(cx - sz + 12, cy + sz);
+    ctx.moveTo(cx - sz, cy + sz - cr); ctx.lineTo(cx - sz, cy + sz); ctx.lineTo(cx - sz + cr, cy + sz);
     // Bottom-right
-    ctx.moveTo(cx + sz - 12, cy + sz); ctx.lineTo(cx + sz, cy + sz); ctx.lineTo(cx + sz, cy + sz - 12);
+    ctx.moveTo(cx + sz - cr, cy + sz); ctx.lineTo(cx + sz, cy + sz); ctx.lineTo(cx + sz, cy + sz - cr);
     ctx.stroke();
   } else if (type === 'circle360') {
-    // 360 circle with arrows
+    const rad = 20 * scale;
     ctx.beginPath();
-    ctx.arc(cx, cy, 22, 0.2 * Math.PI, 1.8 * Math.PI);
+    ctx.arc(cx, cy, rad, 0.2 * Math.PI, 1.8 * Math.PI);
     ctx.stroke();
+    // Arrow tip
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(0.2 * Math.PI) * rad - 5 * scale, cy + Math.sin(0.2 * Math.PI) * rad - 5 * scale);
+    ctx.lineTo(cx + Math.cos(0.2 * Math.PI) * rad, cy + Math.sin(0.2 * Math.PI) * rad);
+    ctx.lineTo(cx + Math.cos(0.2 * Math.PI) * rad + 5 * scale, cy + Math.sin(0.2 * Math.PI) * rad - 3 * scale);
+    ctx.stroke();
+
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 15px sans-serif';
+    ctx.font = `bold ${Math.round(14 * scale)}px system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('360°', cx, cy);
   } else if (type === 'cube3d') {
-    // 3D wireframe cube
-    ctx.strokeRect(cx - 16, cy - 16, 32, 32);
-    ctx.strokeRect(cx - 8, cy - 8, 32, 32);
+    const s = 14 * scale;
+    const off = 7 * scale;
+    ctx.strokeRect(cx - s - off / 2, cy - s + off / 2, s * 2, s * 2);
+    ctx.strokeRect(cx - s + off / 2, cy - s - off / 2, s * 2, s * 2);
     ctx.beginPath();
-    ctx.moveTo(cx - 16, cy - 16); ctx.lineTo(cx - 8, cy - 8);
-    ctx.moveTo(cx + 16, cy - 16); ctx.lineTo(cx + 24, cy - 8);
-    ctx.moveTo(cx - 16, cy + 16); ctx.lineTo(cx - 8, cy + 24);
-    ctx.moveTo(cx + 16, cy + 16); ctx.lineTo(cx + 24, cy + 24);
+    ctx.moveTo(cx - s - off / 2, cy - s + off / 2); ctx.lineTo(cx - s + off / 2, cy - s - off / 2);
+    ctx.moveTo(cx + s - off / 2, cy - s + off / 2); ctx.lineTo(cx + s + off / 2, cy - s - off / 2);
+    ctx.moveTo(cx - s - off / 2, cy + s + off / 2); ctx.lineTo(cx - s + off / 2, cy + s - off / 2);
+    ctx.moveTo(cx + s - off / 2, cy + s + off / 2); ctx.lineTo(cx + s + off / 2, cy + s - off / 2);
     ctx.stroke();
   }
   ctx.restore();
+}
+
+/** Dev-Only Safe Area Check to Assert Zero Overlaps and Zero Margin Violations */
+function checkMuralSafeAreas(W, H, blocks) {
+  const safeTop = H * 0.05;
+  const warnings = [];
+  blocks.forEach((b) => {
+    if (b.y1 < safeTop) {
+      warnings.push(`[Safe-Area Warning] Block '${b.id}' y1 (${b.y1}) touches or exceeds 5% safe top margin (${safeTop})`);
+    }
+    if (b.x1 < 0 || b.x2 > W || b.y2 > H) {
+      warnings.push(`[Safe-Area Warning] Block '${b.id}' exceeds canvas bounds [0,0,${W},${H}]`);
+    }
+  });
+
+  for (let i = 0; i < blocks.length; i++) {
+    for (let j = i + 1; j < blocks.length; j++) {
+      const A = blocks[i], B = blocks[j];
+      const overlap = !(A.x2 < B.x1 || A.x1 > B.x2 || A.y2 < B.y1 || A.y1 > B.y2);
+      if (overlap) {
+        warnings.push(`[Safe-Area Warning] OVERLAP between '${A.id}' [${Math.round(A.x1)},${Math.round(A.y1)},${Math.round(A.x2)},${Math.round(A.y2)}] and '${B.id}' [${Math.round(B.x1)},${Math.round(B.y1)},${Math.round(B.x2)},${Math.round(B.y2)}]`);
+      }
+    }
+  }
+
+  if (warnings.length > 0) {
+    console.warn('[Safe-Area Check] Overlaps/Bounds warnings found:\n' + warnings.join('\n'));
+  } else {
+    console.log(`[Safe-Area Check] PASSED: 0 overlaps, 0 edge violations across ${blocks.length} blocks!`);
+  }
+  return { passed: warnings.length === 0, warnings, blocks };
 }
