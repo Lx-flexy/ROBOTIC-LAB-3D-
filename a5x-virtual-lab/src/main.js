@@ -10,6 +10,7 @@ import { buildCentre } from './scene/zones/centre.js';
 import { buildBackWall } from './scene/zones/backwall.js';
 import { buildTestingZone } from './scene/zones/testing.js';
 import { buildRightWall } from './scene/zones/rightwall.js';
+import { buildHardwareZone } from './scene/zones/hardware.js';
 import { FirstPersonControls } from './controls/FirstPersonControls.js';
 import { createLoader } from './ui/loader.js';
 import { createMenu, createZoneCard } from './ui/menu.js';
@@ -71,7 +72,10 @@ const testingAnim = buildTestingZone(scene);
 loader.update(0.75);
 
 const rightWallAnim = buildRightWall(scene);
-loader.update(0.9);
+loader.update(0.85);
+
+const hardwareAnim = buildHardwareZone(scene);
+loader.update(0.95);
 
 // ══════════════════ CONTROLS ══════════════════
 const controls = new FirstPersonControls(camera, renderer.domElement, $('#stick'));
@@ -157,6 +161,9 @@ renderer.setAnimationLoop(() => {
   backWallAnim.spin.forEach((o) => { o.rotation.y += dt * 1.5; });
   if (rightWallAnim?.spin) {
     rightWallAnim.spin.forEach((o) => { o.rotation.y += dt * 1.5; });
+  }
+  if (hardwareAnim?.spin) {
+    hardwareAnim.spin.forEach((o) => { o.rotation.y += dt * 1.5; });
   }
   // Ceiling fans
   animParts.fans.forEach((f) => { f.rotation.y += dt * 5; });

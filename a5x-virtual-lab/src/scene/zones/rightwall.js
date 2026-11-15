@@ -353,8 +353,8 @@ export function buildRightWall(scene) {
   // ── (H) Door to adjoining space with "ROBOTICS LAB" Header Sign & Room Plaque (center at z = 4.8) ──
   createWallDoor(scene, RW, 0, 4.8, RR, 1.6, 3.4);
 
-  // ── (I) Two Floating Wooden Shelves with Plant & Test Drone on Wall to the Right of the Door (z = 6.6) ──
-  createWallShelvesUnit(scene, RW, RR, 6.6);
+  // ── (I) Two Floating Wooden Shelves with Plant & Test Drone beside Door (z = 5.95) ──
+  createWallShelvesUnit(scene, RW, RR, 5.95);
 
   return anim;
 }

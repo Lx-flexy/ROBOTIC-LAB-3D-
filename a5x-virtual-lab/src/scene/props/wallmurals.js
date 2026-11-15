@@ -1901,18 +1901,17 @@ export function drawA5XMascotVector(g, cx, cy, h) {
 }
 
 /**
- * 7. SIDE WALL MURAL — Right Wall (z = -1.5 to z = +14.5, 16.0m × 5.8m)
+ * 7. SIDE WALL MURAL — Right Wall (z = -1.5 to z = +6.7, 8.2m × 5.8m)
  * Full-height seamless painted mural matching Testing Zone & Back Wall.
+ * Spans from Maker Workbench to Door, leaving z = 6.7 to 13.7 for Hardware Zone.
  * Includes:
  *  - Warm cream painted wall base (#fff1e3)
- *  - Dynamic diagonal navy (#14284b) & orange (#ff7a00) painted stripes
  *  - High-res vector A5X mascot in dashed circle badge (between window and door)
  *  - Tagline "Build • Test • Compete • Innovate" with orange underline stroke
- *  - Innovation & Robotics Lab tech feature wall to the right of the door
  *  - Bottom horizontal orange stripe meeting the baseboard
  */
 export function createRightWallSideMural(scene) {
-  const W = 4096, H = 1484;
+  const W = 2048, H = 1450;
   const tex = canvasTex(W, H, (g) => {
     // 1. Warm cream base wall paint
     g.fillStyle = '#fff1e3';
@@ -1922,80 +1921,46 @@ export function createRightWallSideMural(scene) {
     g.fillStyle = '#ff7a00';
     g.fillRect(0, H - 28, W, 28);
 
-    // 3. Sweeping diagonal navy & orange painted bands
-    // Diagonal across the wall to the right of the door (x ≈ 2000 to 3600)
-    g.fillStyle = '#14284b';
-    g.beginPath();
-    g.moveTo(2150, 0);
-    g.lineTo(2620, 0);
-    g.lineTo(3380, H);
-    g.lineTo(2910, H);
-    g.closePath();
-    g.fill();
-
-    // Parallel orange accent band
-    g.fillStyle = '#ff7a00';
-    g.beginPath();
-    g.moveTo(2640, 0);
-    g.lineTo(2760, 0);
-    g.lineTo(3520, H);
-    g.lineTo(3400, H);
-    g.closePath();
-    g.fill();
-
-    // Subtle diagonal stripe on the far left (z ≈ -1.0)
+    // 3. Subtle diagonal stripes on the left & right
     g.fillStyle = '#14284b';
     g.beginPath();
     g.moveTo(0, 0);
-    g.lineTo(260, 0);
+    g.lineTo(240, 0);
+    g.lineTo(0, 460);
+    g.closePath();
+    g.fill();
+
+    g.fillStyle = '#ff7a00';
+    g.beginPath();
+    g.moveTo(250, 0);
+    g.lineTo(310, 0);
+    g.lineTo(0, 580);
     g.lineTo(0, 480);
     g.closePath();
     g.fill();
 
-    g.fillStyle = '#ff7a00';
+    // Diagonal bands to the right of door (x_c ≈ 1780 to 2048)
+    g.fillStyle = '#14284b';
     g.beginPath();
-    g.moveTo(270, 0);
-    g.lineTo(340, 0);
-    g.lineTo(0, 620);
-    g.lineTo(0, 500);
+    g.moveTo(1780, 0);
+    g.lineTo(1980, 0);
+    g.lineTo(2048, 200);
+    g.lineTo(2048, 600);
+    g.lineTo(1850, H);
+    g.lineTo(1750, H);
     g.closePath();
     g.fill();
 
-    // 4. Tech circuit traces branching across the painted wall
-    g.strokeStyle = '#ff7a00';
-    g.lineWidth = 6;
-    g.lineCap = 'round';
-    // Circuit line 1
+    g.fillStyle = '#ff7a00';
     g.beginPath();
-    g.moveTo(3500, 320);
-    g.lineTo(3820, 320);
-    g.lineTo(3890, 420);
-    g.lineTo(4020, 420);
-    g.stroke();
-    [[3500, 320], [3820, 320], [3890, 420], [4020, 420]].forEach(([cx, cy]) => {
-      g.fillStyle = '#ff7a00';
-      g.beginPath(); g.arc(cx, cy, 10, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#fff1e3';
-      g.beginPath(); g.arc(cx, cy, 5, 0, Math.PI * 2); g.fill();
-    });
+    g.moveTo(1990, 0);
+    g.lineTo(2048, 0);
+    g.lineTo(2048, 180);
+    g.closePath();
+    g.fill();
 
-    // Circuit line 2 (navy)
-    g.strokeStyle = '#14284b';
-    g.lineWidth = 5;
-    g.beginPath();
-    g.moveTo(2000, 850);
-    g.lineTo(2150, 850);
-    g.lineTo(2240, 960);
-    g.lineTo(2400, 960);
-    g.stroke();
-    [[2000, 850], [2150, 850], [2240, 960], [2400, 960]].forEach(([cx, cy]) => {
-      g.fillStyle = '#14284b';
-      g.beginPath(); g.arc(cx, cy, 8, 0, Math.PI * 2); g.fill();
-    });
-
-    // 5. MAIN MASCOT BADGE — Between Window and Door (z ≈ 3.0 -> x_c ≈ 1152, y_c ≈ 660)
-    // Clear of window right frame (x_c ≈ 910) and door left frame (x_c ≈ 1395)
-    const badgeX = 1152;
+    // 4. MAIN MASCOT BADGE — Between Window and Door (z ≈ 3.0 -> x_c ≈ 1124, y_c ≈ 640)
+    const badgeX = 1124;
     const badgeY = 640;
     const badgeRadius = 210;
 
@@ -2035,80 +2000,6 @@ export function createRightWallSideMural(scene) {
     g.beginPath();
     g.roundRect(badgeX - 160, badgeY + badgeRadius + 120, 320, 6, 3);
     g.fill();
-
-    // 6. HERO FEATURE WALL — Right of Door (x_c ≈ 2900, y_c ≈ 520)
-    // Fills the large empty wall area around the door
-    const featX = 2920;
-    const featY = 480;
-
-    // Navy rounded pill title banner
-    const pillW = 740, pillH = 110;
-    g.fillStyle = '#14284b';
-    g.beginPath();
-    g.roundRect(featX - pillW / 2, featY - pillH / 2, pillW, pillH, pillH / 2);
-    g.fill();
-    g.strokeStyle = '#ff7a00';
-    g.lineWidth = 6;
-    g.stroke();
-
-    // White bold title text inside pill
-    g.fillStyle = '#ffffff';
-    g.font = `900 48px 'Segoe UI', system-ui, sans-serif`;
-    g.textAlign = 'center';
-    g.textBaseline = 'middle';
-    g.fillText('ROBOTICS & AI LAB', featX - 45, featY);
-
-    // Orange chevrons on right of pill (>>>)
-    g.fillStyle = '#ff7a00';
-    for (let c = 0; c < 3; c++) {
-      const chX = featX + pillW / 2 - 110 + c * 24;
-      g.beginPath();
-      g.moveTo(chX, featY - 20);
-      g.lineTo(chX + 16, featY);
-      g.lineTo(chX, featY + 20);
-      g.lineTo(chX - 6, featY + 20);
-      g.lineTo(chX + 10, featY);
-      g.lineTo(chX - 6, featY - 20);
-      g.closePath();
-      g.fill();
-    }
-
-    // Secondary Motto below pill
-    g.fillStyle = '#14284b';
-    g.font = `800 38px 'Segoe UI', system-ui, sans-serif`;
-    g.fillText('INVENT   •   CODE   •   DISCOVER', featX, featY + 105);
-
-    // Orange underline
-    g.fillStyle = '#ff7a00';
-    g.beginPath();
-    g.roundRect(featX - 240, featY + 132, 480, 5, 2.5);
-    g.fill();
-
-    // Technical line-art schematics in paint style
-    // Quadcopter technical line-art (x ≈ 2380, y ≈ 1120)
-    g.strokeStyle = '#14284b';
-    g.lineWidth = 4;
-    g.beginPath(); g.arc(2380, 1120, 36, 0, Math.PI * 2); g.stroke();
-    [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sy]) => {
-      const armX = 2380 + sx * 65;
-      const armY = 1120 + sy * 45;
-      g.beginPath(); g.moveTo(2380, 1120); g.lineTo(armX, armY); g.stroke();
-      g.strokeStyle = '#ff7a00'; g.lineWidth = 3;
-      g.beginPath(); g.arc(armX, armY, 22, 0, Math.PI * 2); g.stroke();
-      g.strokeStyle = '#14284b'; g.lineWidth = 4;
-    });
-
-    // Technical rover line-art (x ≈ 3720, y ≈ 1080)
-    g.strokeStyle = '#14284b';
-    g.lineWidth = 4;
-    g.beginPath(); g.roundRect(3640, 1040, 160, 80, 12); g.stroke();
-    g.fillStyle = '#ff7a00';
-    g.beginPath(); g.arc(3720, 1070, 18, 0, Math.PI * 2); g.fill();
-    [-55, 55].forEach((wx) => {
-      g.fillStyle = '#14284b';
-      g.beginPath(); g.roundRect(3720 + wx - 18, 1120, 36, 26, 6); g.fill();
-      g.beginPath(); g.roundRect(3720 + wx - 18, 1014, 36, 26, 6); g.fill();
-    });
   });
 
   const mat = new THREE.MeshStandardMaterial({
@@ -2117,12 +2008,12 @@ export function createRightWallSideMural(scene) {
     metalness: 0.0,
   });
 
-  // Physical plane covering from z = -1.5 to z = +14.5 (16.0m wide, 5.8m tall)
+  // Physical plane covering from z = -1.5 to z = +6.7 (8.2m wide, 5.8m tall)
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(16.0, 5.8),
+    new THREE.PlaneGeometry(8.2, 5.8),
     mat
   );
-  mesh.position.set(19.76, 3.0, 6.5);
+  mesh.position.set(19.76, 3.0, 2.6);
   mesh.rotation.y = -Math.PI / 2;
   scene.add(mesh);
 }
