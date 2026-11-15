@@ -594,6 +594,606 @@ function createFloorPlant(parent, x, y, z) {
   return g;
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   CODING ZONE PROPS (Reference-matched Overhaul)
+   • Dual Large Monitors with thin bezels, desktop stands, glowing IDE screens
+   • Black mechanical keyboards and ergonomic optical mice with desk pads
+   • Two chairs: black frame + mesh back + vibrant ORANGE seat cushions
+   • Floating black shelf with warm LED strip light underneath
+   • 3 stacked books ("Web Development", "C++", "Python") with crisp spine text
+   • RC robot car with 4 rubber tires and front ultrasonic sensor
+   • White ceramic mug with A5X logo
+   • Cute waving robot mascot with glowing cyan LED eyes
+   • Right industrial rack: base 2-door black cabinet with silver handles,
+     2 black </> organizer boxes, clear acrylic box with electronics,
+     and quadcopter drone resting safely ON top shelf
+═══════════════════════════════════════════════════════════════════ */
+
+/** High-res VS Code IDE screen texture (1024x640) */
+function createIdeScreenTexture(fileName, lang = 'python') {
+  return canvasTex(1024, 640, (g, w, h) => {
+    // 1. Editor background (dark slate)
+    g.fillStyle = '#1e1e24';
+    g.fillRect(0, 0, w, h);
+
+    // 2. Left Activity Bar (narrow icon column)
+    g.fillStyle = '#18181c';
+    g.fillRect(0, 0, 48, h);
+
+    // Activity bar icons (simplified file tree, search, git, debug)
+    g.strokeStyle = '#858595';
+    g.lineWidth = 3;
+    // File icon
+    g.strokeRect(14, 20, 20, 24);
+    // Search icon
+    g.beginPath();
+    g.arc(22, 70, 8, 0, Math.PI * 2);
+    g.moveTo(28, 76);
+    g.lineTo(34, 82);
+    g.stroke();
+    // Source control branch icon
+    g.beginPath();
+    g.arc(24, 115, 4, 0, Math.PI * 2);
+    g.arc(24, 135, 4, 0, Math.PI * 2);
+    g.moveTo(24, 119);
+    g.lineTo(24, 131);
+    g.stroke();
+
+    // 3. Explorer Sidebar
+    g.fillStyle = '#22232a';
+    g.fillRect(48, 0, 190, h);
+    g.fillStyle = '#a0a0b0';
+    g.font = "bold 15px 'Segoe UI', sans-serif";
+    g.fillText('EXPLORER', 64, 28);
+
+    g.font = "14px 'Segoe UI', sans-serif";
+    const files = [
+      '∨ src',
+      '    > controllers',
+      '    > models',
+      '    > sensors',
+      `    ${fileName}`,
+      '    config.yaml',
+      '    requirements.txt',
+      '    README.md'
+    ];
+    files.forEach((f, i) => {
+      if (f.includes(fileName)) {
+        g.fillStyle = '#2d303e';
+        g.fillRect(48, 48 + i * 26, 190, 24);
+        g.fillStyle = '#ffffff';
+      } else {
+        g.fillStyle = '#9aa0b0';
+      }
+      g.fillText(f, 64, 65 + i * 26);
+    });
+
+    // 4. Tab Bar
+    g.fillStyle = '#252630';
+    g.fillRect(238, 0, w - 238, 36);
+
+    // Active tab
+    g.fillStyle = '#1e1e24';
+    g.fillRect(238, 0, 180, 36);
+    g.fillStyle = '#ff7a00';
+    g.fillRect(238, 0, 180, 3); // Orange top accent line
+    g.fillStyle = '#ffffff';
+    g.font = "14px 'Segoe UI', monospace";
+    g.fillText(fileName, 258, 22);
+    g.fillStyle = '#858595';
+    g.fillText('×', 396, 22);
+
+    // 5. Line numbers column
+    g.fillStyle = '#565c6e';
+    g.font = "14px 'Consolas', 'Courier New', monospace";
+    for (let l = 1; l <= 22; l++) {
+      g.fillText(String(l).padStart(2, ' '), 250, 60 + (l - 1) * 24);
+    }
+
+    // 6. Code syntax lines
+    const codeLines = lang === 'python' ? [
+      { text: '#!/usr/bin/env python3', col: '#6a9955' },
+      { text: 'import time, math, rospy', col: '#c586c0' },
+      { text: 'from sensor_msgs.msg import LaserScan', col: '#c586c0' },
+      { text: 'from geometry_msgs.msg import Twist', col: '#c586c0' },
+      { text: '', col: '#ffffff' },
+      { text: 'class AutonomousNavigator:', col: '#4ec9b0' },
+      { text: '    def __init__(self, target_speed=1.2):', col: '#dcdcaa' },
+      { text: '        self.speed = target_speed', col: '#9cdcfe' },
+      { text: '        self.obstacle_dist = float("inf")', col: '#9cdcfe' },
+      { text: '        self.cmd_pub = rospy.Publisher("/cmd_vel", Twist)', col: '#9cdcfe' },
+      { text: '', col: '#ffffff' },
+      { text: '    def laser_callback(self, data):', col: '#dcdcaa' },
+      { text: '        # Process 360-degree LiDAR range data', col: '#6a9955' },
+      { text: '        ranges = [r for r in data.ranges if r > 0.05]', col: '#d4d4d4' },
+      { text: '        self.obstacle_dist = min(ranges) if ranges else 10.0', col: '#d4d4d4' },
+      { text: '        if self.obstacle_dist < 0.6:', col: '#c586c0' },
+      { text: '            self.emergency_evasion()', col: '#dcdcaa' },
+      { text: '        else:', col: '#c586c0' },
+      { text: '            self.navigate_forward()', col: '#dcdcaa' },
+      { text: '', col: '#ffffff' },
+      { text: 'if __name__ == "__main__":', col: '#c586c0' },
+      { text: '    nav = AutonomousNavigator()', col: '#4ec9b0' }
+    ] : [
+      { text: '#include <iostream>', col: '#c586c0' },
+      { text: '#include <vector>', col: '#c586c0' },
+      { text: '#include "robot_core.hpp"', col: '#ce9178' },
+      { text: '', col: '#ffffff' },
+      { text: 'namespace SRI::Robotics {', col: '#4ec9b0' },
+      { text: '', col: '#ffffff' },
+      { text: 'class KinematicsSolver {', col: '#4ec9b0' },
+      { text: 'public:', col: '#c586c0' },
+      { text: '    KinematicsSolver(double l1, double l2) : arm1(l1), arm2(l2) {}', col: '#dcdcaa' },
+      { text: '', col: '#ffffff' },
+      { text: '    bool computeIK(double targetX, double targetY, double& theta1) {', col: '#dcdcaa' },
+      { text: '        double d = (targetX * targetX + targetY * targetY);', col: '#9cdcfe' },
+      { text: '        if (d > (arm1 + arm2) * (arm1 + arm2)) return false;', col: '#c586c0' },
+      { text: '        theta1 = std::atan2(targetY, targetX);', col: '#dcdcaa' },
+      { text: '        return true;', col: '#c586c0' },
+      { text: '    }', col: '#d4d4d4' },
+      { text: '', col: '#ffffff' },
+      { text: 'private:', col: '#c586c0' },
+      { text: '    double arm1, arm2;', col: '#9cdcfe' },
+      { text: '};', col: '#d4d4d4' },
+      { text: '', col: '#ffffff' },
+      { text: '} // namespace SRI', col: '#6a9955' }
+    ];
+
+    codeLines.forEach((cl, i) => {
+      g.fillStyle = cl.col;
+      g.font = "14px 'Consolas', 'Courier New', monospace";
+      g.fillText(cl.text, 285, 60 + i * 24);
+    });
+
+    // 7. Minimap on right edge
+    g.fillStyle = '#22232a';
+    g.fillRect(w - 75, 36, 75, h - 60);
+    for (let m = 0; m < 35; m++) {
+      g.fillStyle = m % 3 === 0 ? '#4ec9b0' : m % 2 === 0 ? '#9cdcfe' : '#c586c0';
+      const mw = 20 + ((m * 17) % 40);
+      g.fillRect(w - 68, 48 + m * 14, mw, 5);
+    }
+
+    // 8. Bottom Status Bar (VS Code blue)
+    g.fillStyle = '#007acc';
+    g.fillRect(0, h - 24, w, 24);
+    g.fillStyle = '#ffffff';
+    g.font = "12px 'Segoe UI', sans-serif";
+    g.fillText('  main*  |  0 errors, 0 warnings  |  SRI Lab v2.5', 12, h - 8);
+    g.textAlign = 'right';
+    g.fillText(`UTF-8  |  ${lang === 'python' ? 'Python 3.11' : 'C++20'}  |  Ln 18, Col 24  `, w - 10, h - 8);
+  });
+}
+
+/** Complete Realistic Workstation (Large Monitor + Stand + Keyboard + Mouse + Desk Pad) */
+function createCodingWorkstation(parent, x, z, fileName, lang) {
+  const g = new THREE.Group();
+  g.position.set(x, 0.82, z);
+
+  const blackMat = M(0x141418, { roughness: 0.35, metalness: 0.4 });
+  const standMat = M(0x101014, { roughness: 0.3, metalness: 0.6 });
+
+  // 1. Desk Pad / Mousepad
+  const padMat = M(0x1a1a20, { roughness: 0.85 });
+  box(g, 0.88, 0.005, 0.38, padMat, 0, 0.002, 0.16);
+  // Pad orange border stitch
+  box(g, 0.88, 0.006, 0.008, M(0xff7a00), 0, 0.003, 0.35);
+
+  // 2. Monitor Stand
+  // Base plate
+  box(g, 0.38, 0.016, 0.22, standMat, 0, 0.008, -0.15);
+  // Neck post
+  const neck = box(g, 0.065, 0.36, 0.045, standMat, 0, 0.18, -0.17);
+  neck.rotation.x = -0.05;
+
+  // 3. Monitor Frame & Bezel
+  const frameY = 0.46;
+  const frameZ = -0.14;
+  box(g, 1.10, 0.65, 0.035, blackMat, 0, frameY, frameZ);
+
+  // 4. Glowing Dark IDE Screen
+  const ideTex = createIdeScreenTexture(fileName, lang);
+  ideTex.anisotropy = 4;
+  const screenMat = new THREE.MeshStandardMaterial({
+    map: ideTex,
+    emissive: 0xffffff,
+    emissiveMap: ideTex,
+    emissiveIntensity: 0.62,
+    roughness: 0.25,
+    metalness: 0.05
+  });
+  const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.06, 0.61), screenMat);
+  screenMesh.position.set(0, frameY, frameZ + 0.019);
+  g.add(screenMesh);
+
+  // 5. Mechanical Keyboard
+  const kbMat = M(0x111114, { roughness: 0.4 });
+  const kbX = -0.08, kbY = 0.012, kbZ = 0.16;
+  const kbGroup = new THREE.Group();
+  kbGroup.position.set(kbX, kbY, kbZ);
+  kbGroup.rotation.x = 0.06; // tilted slightly towards user
+  box(kbGroup, 0.46, 0.016, 0.145, kbMat, 0, 0, 0);
+
+  // Keyboard keys texture
+  const keysTex = canvasTex(256, 128, (kg) => {
+    kg.fillStyle = '#16161a';
+    kg.fillRect(0, 0, 256, 128);
+    kg.fillStyle = '#282830';
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 14; c++) {
+        if (r === 4 && c > 3 && c < 9) continue; // spacebar area
+        kg.fillRect(6 + c * 17.5, 6 + r * 23, 14, 18);
+      }
+    }
+    // Spacebar
+    kg.fillRect(6 + 4 * 17.5, 6 + 4 * 23, 85, 18);
+  });
+  const keysPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.44, 0.13),
+    new THREE.MeshStandardMaterial({ map: keysTex, roughness: 0.5 })
+  );
+  keysPlane.rotation.x = -Math.PI / 2;
+  keysPlane.position.y = 0.009;
+  kbGroup.add(keysPlane);
+  g.add(kbGroup);
+
+  // 6. Ergonomic Optical Mouse
+  const mouseGroup = new THREE.Group();
+  mouseGroup.position.set(0.26, 0.016, 0.16);
+  // Mouse body (curved capsule/box)
+  const mouseBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.075, 0.030, 0.115),
+    M(0x16161a, { roughness: 0.35 })
+  );
+  mouseGroup.add(mouseBody);
+  // Scroll wheel
+  cyl(mouseGroup, 0.006, 0.006, 0.018, M(0xff7a00), 0, 0.016, -0.02, 8);
+  g.add(mouseGroup);
+
+  parent.add(g);
+  return g;
+}
+
+/** 3 Stacked Books ("Web Development", "C++", "Python") with crisp spine titles */
+function createStackedBooks(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const books = [
+    { title: 'Web Development', col: '#14284b', band: '#ffd43b', w: 0.36, h: 0.055, d: 0.24, dy: 0.028 },
+    { title: 'C++',             col: '#182b52', band: '#e0e0e0', w: 0.33, h: 0.055, d: 0.23, dy: 0.083 },
+    { title: 'Python',          col: '#1b3260', band: '#ff7a00', w: 0.30, h: 0.055, d: 0.21, dy: 0.138 }
+  ];
+
+  books.forEach((b) => {
+    const bookGroup = new THREE.Group();
+    bookGroup.position.set(0, b.dy, 0);
+
+    // Book body
+    box(bookGroup, b.w, b.h, b.d, M(b.col, { roughness: 0.5 }), 0, 0, 0);
+    // White pages on side edges
+    box(bookGroup, b.w - 0.02, b.h - 0.012, 0.015, M(0xf5f5f5, { roughness: 0.9 }), 0, 0, -b.d / 2 + 0.008);
+
+    // Front Spine with canvas text
+    const spineTex = canvasTex(512, 128, (sg) => {
+      sg.fillStyle = b.col;
+      sg.fillRect(0, 0, 512, 128);
+      // Accent metallic bands
+      sg.fillStyle = b.band;
+      sg.fillRect(20, 10, 8, 108);
+      sg.fillRect(484, 10, 8, 108);
+      // Spine title
+      sg.fillStyle = '#ffffff';
+      sg.font = "900 44px 'Segoe UI', Arial, sans-serif";
+      sg.textAlign = 'center';
+      sg.textBaseline = 'middle';
+      sg.fillText(b.title, 256, 64);
+    });
+    spineTex.anisotropy = 4;
+    const spineMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(b.w, b.h),
+      new THREE.MeshStandardMaterial({ map: spineTex, roughness: 0.45 })
+    );
+    spineMesh.position.set(0, 0, b.d / 2 + 0.001);
+    bookGroup.add(spineMesh);
+
+    g.add(bookGroup);
+  });
+
+  parent.add(g);
+  return g;
+}
+
+/** Small RC Robot Car with 4 knobby rubber wheels and front sensor */
+function createRcRobotCar(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const chassisMat = M(0x1a1a1e, { roughness: 0.4 });
+  const yellowMat = M(0xf59e0b, { roughness: 0.35 });
+  const tireMat = M(0x111111, { roughness: 0.8 });
+
+  // Chassis lower and upper decks
+  box(g, 0.28, 0.025, 0.17, chassisMat, 0, 0.035, 0);
+  box(g, 0.24, 0.020, 0.14, yellowMat, 0, 0.065, 0);
+
+  // Standoff pillars
+  [[-0.10, -0.06], [0.10, -0.06], [-0.10, 0.06], [0.10, 0.06]].forEach(([px, pz]) => {
+    cyl(g, 0.005, 0.005, 0.03, M(0xc0c0c0), px, 0.05, pz, 6);
+  });
+
+  // Top microcontroller circuit board (green PCB)
+  box(g, 0.14, 0.012, 0.09, M(0x15803d, { roughness: 0.6 }), -0.02, 0.08, 0);
+  // Microcontroller chip
+  box(g, 0.04, 0.008, 0.04, M(0x0a0a0a), -0.02, 0.09, 0);
+  // Indicator LED (glowing red)
+  box(g, 0.012, 0.012, 0.012, Bm(0xef4444), -0.06, 0.09, 0.03);
+
+  // Front dual ultrasonic distance sensor eyes
+  cyl(g, 0.018, 0.018, 0.022, M(0xd1d5db), 0.14, 0.075, -0.03, 10);
+  cyl(g, 0.018, 0.018, 0.022, M(0xd1d5db), 0.14, 0.075, 0.03, 10);
+  cyl(g, 0.010, 0.010, 0.024, M(0x111111), 0.14, 0.075, -0.03, 8);
+  cyl(g, 0.010, 0.010, 0.024, M(0x111111), 0.14, 0.075, 0.03, 8);
+
+  // 4 Off-road rubber wheels with yellow rims
+  const wheelR = 0.042;
+  const wheelW = 0.032;
+  [
+    [-0.09, 0.042, -0.105],
+    [0.09, 0.042, -0.105],
+    [-0.09, 0.042, 0.105],
+    [0.09, 0.042, 0.105]
+  ].forEach(([wx, wy, wz]) => {
+    // Tire
+    const tire = cyl(g, wheelR, wheelR, wheelW, tireMat, wx, wy, wz, 12);
+    tire.rotation.x = Math.PI / 2;
+    // Rim
+    const rim = cyl(g, wheelR * 0.58, wheelR * 0.58, wheelW + 0.002, yellowMat, wx, wy, wz, 10);
+    rim.rotation.x = Math.PI / 2;
+  });
+
+  parent.add(g);
+  return g;
+}
+
+/** White Ceramic Coffee Mug with A5X Logo */
+function createWhiteMug(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const ceramicMat = M(0xffffff, { roughness: 0.15, metalness: 0.05 });
+  // Mug cylinder body
+  cyl(g, 0.052, 0.048, 0.11, ceramicMat, 0, 0.055, 0, 16);
+  // Coffee inside
+  cyl(g, 0.046, 0.046, 0.01, M(0x2d1810, { roughness: 0.3 }), 0, 0.10, 0, 14);
+  // Handle
+  const handle = new THREE.Mesh(
+    new THREE.TorusGeometry(0.038, 0.010, 8, 16, Math.PI),
+    ceramicMat
+  );
+  handle.position.set(0.062, 0.055, 0);
+  handle.rotation.y = Math.PI / 2;
+  g.add(handle);
+
+  // Mug front logo
+  const logoTex = canvasTex(128, 64, (lg) => {
+    lg.fillStyle = '#ffffff';
+    lg.fillRect(0, 0, 128, 64);
+    lg.fillStyle = '#ff7a00';
+    lg.font = "900 28px 'Segoe UI', sans-serif";
+    lg.textAlign = 'center';
+    lg.textBaseline = 'middle';
+    lg.fillText('A5X', 64, 32);
+  });
+  const logoMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.05, 0.025),
+    new THREE.MeshStandardMaterial({ map: logoTex, roughness: 0.2 })
+  );
+  logoMesh.position.set(0, 0.058, 0.053);
+  g.add(logoMesh);
+
+  parent.add(g);
+  return g;
+}
+
+/** Cute Waving Robot Mascot (White Body, Orange Trim, Glowing Cyan Eyes) */
+function createWavingMascot(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const whiteMat = M(0xf8fafc, { roughness: 0.3, metalness: 0.05 });
+  const orangeMat = M(0xff7a00, { roughness: 0.4 });
+  const darkMat = M(0x141418, { roughness: 0.4 });
+
+  // Feet & Legs
+  box(g, 0.065, 0.05, 0.09, orangeMat, -0.055, 0.025, 0.01);
+  box(g, 0.065, 0.05, 0.09, orangeMat, 0.055, 0.025, 0.01);
+
+  // Torso
+  box(g, 0.18, 0.16, 0.13, whiteMat, 0, 0.13, 0);
+  // Orange belly plate
+  box(g, 0.12, 0.09, 0.015, orangeMat, 0, 0.12, 0.068);
+
+  // Left arm resting at side
+  const leftArm = box(g, 0.045, 0.12, 0.045, whiteMat, -0.115, 0.13, 0);
+  leftArm.rotation.z = -0.12;
+
+  // Right waving arm (angled up at 45° with hand waving)
+  const rightShoulder = new THREE.Group();
+  rightShoulder.position.set(0.10, 0.18, 0);
+  rightShoulder.rotation.z = -0.85; // Raised upward
+  box(rightShoulder, 0.045, 0.10, 0.045, whiteMat, 0, 0.05, 0);
+  // Forearm & Hand bent upward in wave
+  const rightHand = new THREE.Group();
+  rightHand.position.set(0, 0.10, 0);
+  rightHand.rotation.z = 0.55;
+  box(rightHand, 0.042, 0.06, 0.042, whiteMat, 0, 0.03, 0);
+  cyl(rightHand, 0.022, 0.022, 0.025, orangeMat, 0, 0.06, 0, 8);
+  rightShoulder.add(rightHand);
+  g.add(rightShoulder);
+
+  // Neck
+  cyl(g, 0.025, 0.025, 0.025, darkMat, 0, 0.22, 0, 8);
+
+  // Head
+  const head = new THREE.Group();
+  head.name = 'codingZoneMascotHead';
+  head.position.set(0, 0.29, 0);
+  // Head block
+  box(head, 0.19, 0.14, 0.13, whiteMat, 0, 0, 0);
+  // Black visor face
+  box(head, 0.15, 0.09, 0.015, darkMat, 0, 0, 0.067);
+  // Glowing cyan eyes
+  const eyeMat = Bm(0x00f5ff);
+  box(head, 0.032, 0.028, 0.018, eyeMat, -0.042, 0.008, 0.070);
+  box(head, 0.032, 0.028, 0.018, eyeMat, 0.042, 0.008, 0.070);
+  // Orange ear cups
+  cyl(head, 0.028, 0.028, 0.025, orangeMat, -0.105, 0, 0, 10);
+  cyl(head, 0.028, 0.028, 0.025, orangeMat, 0.105, 0, 0, 10);
+  // Antenna
+  cyl(head, 0.006, 0.006, 0.04, darkMat, 0, 0.09, 0, 6);
+  const antBall = new THREE.Mesh(new THREE.SphereGeometry(0.014, 8, 6), orangeMat);
+  antBall.position.set(0, 0.115, 0);
+  head.add(antBall);
+
+  g.add(head);
+
+  parent.add(g);
+  return g;
+}
+
+/** Floating Black Top Shelf with warm LED strip underneath + props */
+function createFloatingShelfWithProps(parent, x, y, z, anim) {
+  const g = new THREE.Group();
+
+  // 1. Floating Matte Black Shelf Board
+  const shelfMat = M(0x161618, { roughness: 0.45, metalness: 0.2 });
+  box(g, 3.8, 0.05, 0.30, shelfMat, x, y, z);
+
+  // 2. Warm LED Strip along full underside
+  const ledMat = M(0xffe082, {
+    emissive: 0xffe082,
+    emissiveIntensity: 2.2,
+    roughness: 0.2
+  });
+  box(g, 3.6, 0.012, 0.035, ledMat, x, y - 0.028, z + 0.04);
+
+  // 3. Warm Downlight illuminating workstation below
+  const shelfLight = new THREE.PointLight(0xffb74d, 2.0, 3.2, 2.0);
+  shelfLight.position.set(x, y - 0.06, z + 0.12);
+  g.add(shelfLight);
+
+  // 4. Shelf Props (standing on top surface y + 0.025 = 2.475)
+  const topY = y + 0.025;
+
+  // 3 Stacked Books ("Web Development", "C++", "Python")
+  createStackedBooks(g, x - 1.45, topY, z);
+
+  // RC Robot Car
+  createRcRobotCar(g, x - 0.45, topY, z);
+
+  // White Ceramic Mug with A5X logo
+  createWhiteMug(g, x + 0.45, topY, z);
+
+  // Cute Waving Robot Mascot
+  const wavingBot = createWavingMascot(g, x + 1.25, topY, z);
+  if (anim) {
+    anim.head = wavingBot.getObjectByName('codingZoneMascotHead');
+  }
+
+  parent.add(g);
+  return g;
+}
+
+/** Right Industrial Shelving Unit (Base 2-Door Cabinet + Wooden Shelves + Drone) */
+function createCodingZoneRack(parent, x, z) {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+
+  const blackSteelMat = M(0x1a1a1e, { roughness: 0.4, metalness: 0.6 });
+  const woodMat = M(C.wood, { roughness: 0.6 });
+  const silverMat = M(0xd1d5db, { roughness: 0.25, metalness: 0.8 });
+
+  const rW = 1.22, rD = 0.54, cabH = 0.74;
+
+  // 1. Base 2-Door Black Cabinet
+  box(g, rW, cabH, rD, blackSteelMat, 0, cabH / 2, 0);
+  // Blonde wood countertop on top of cabinet
+  box(g, rW + 0.02, 0.035, rD + 0.02, woodMat, 0, cabH + 0.0175, 0);
+
+  // Cabinet front doors slit line
+  box(g, 0.008, cabH - 0.08, 0.005, M(0x0a0a0d), 0, cabH / 2, rD / 2 + 0.002);
+  // Two sleek vertical chrome handles
+  [-0.04, 0.04].forEach(hx => {
+    cyl(g, 0.007, 0.007, 0.14, silverMat, hx, cabH * 0.65, rD / 2 + 0.025, 8);
+  });
+
+  // 2. Black Steel Corner Uprights
+  const postH = 1.62;
+  const postY = cabH + postH / 2;
+  const px = rW / 2 - 0.025, pz = rD / 2 - 0.025;
+  [[-px, -pz], [px, -pz], [-px, pz], [px, pz]].forEach(([a, b]) => {
+    box(g, 0.035, postH, 0.035, blackSteelMat, a, postY, b);
+  });
+
+  // 3. Wooden Shelves
+  const shelfHeights = [1.25, 1.70, 2.15];
+  shelfHeights.forEach(sy => {
+    box(g, rW - 0.02, 0.030, rD - 0.02, woodMat, 0, sy, 0);
+  });
+
+  // 4. Shelf 1 (y = 1.25): Two black boxes with orange </> mark
+  [-0.24, 0.24].forEach((bx, idx) => {
+    const boxGroup = new THREE.Group();
+    boxGroup.position.set(bx, 1.25 + 0.11, 0);
+    // Black box body
+    box(boxGroup, 0.28, 0.20, 0.32, M(0x18181c, { roughness: 0.5 }), 0, 0, 0);
+
+    // Front face with </> mark
+    const markTex = canvasTex(128, 128, (mg) => {
+      mg.fillStyle = '#18181c';
+      mg.fillRect(0, 0, 128, 128);
+      mg.fillStyle = idx === 0 ? '#ff7a00' : '#ffffff';
+      mg.font = "900 52px monospace, sans-serif";
+      mg.textAlign = 'center';
+      mg.textBaseline = 'middle';
+      mg.fillText('</>', 64, 64);
+    });
+    const markMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.18, 0.14),
+      new THREE.MeshStandardMaterial({ map: markTex, roughness: 0.4 })
+    );
+    markMesh.position.set(0, 0, 0.161);
+    boxGroup.add(markMesh);
+    g.add(boxGroup);
+  });
+
+  // 5. Shelf 2 (y = 1.70): Transparent acrylic storage box with visible electronics
+  const clearMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.45,
+    roughness: 0.12,
+    transmission: 0.75,
+    ior: 1.45
+  });
+  box(g, 0.52, 0.18, 0.34, clearMat, 0, 1.70 + 0.10, 0);
+  // Orange latches on lid
+  [-0.18, 0.18].forEach(lx => {
+    box(g, 0.018, 0.05, 0.015, M(0xff7a00), lx, 1.70 + 0.17, 0.172);
+  });
+  // Visible electronics inside
+  box(g, 0.20, 0.015, 0.14, M(0x15803d), -0.08, 1.70 + 0.04, 0); // green PCB
+  box(g, 0.12, 0.035, 0.08, M(0xff7a00), 0.12, 1.70 + 0.04, 0);  // orange battery pack
+  cyl(g, 0.02, 0.02, 0.08, M(0x2563eb), 0, 1.70 + 0.04, -0.06, 8); // capacitor
+
+  // 6. Shelf 3 (y = 2.15): Quadcopter Drone sitting safely ON top wooden shelf
+  createDrone(g, 0, 2.165, 0);
+
+  parent.add(g);
+  return g;
+}
+
 export function buildBackWall(scene) {
   const anim = { spin: [], head: null };
 
@@ -652,45 +1252,52 @@ export function buildBackWall(scene) {
   pyramid.position.set(-0.1, 2.85, -14.5);
   scene.add(pyramid);
 
-  // ━━━━━━━ CODING ZONE (x ≈ 11) ━━━━━━━
-  bay(11, 'CODING ZONE');
+  // ━━━━━━━ CODING ZONE (x ≈ 11.0, reference-matched overhaul) ━━━━━━━
+  // Workbench Table (5.4m wide, 1.25m deep, 0.82m tall, blonde wood top + black metal legs)
+  createTable(scene, 5.4, 1.25, 10.9, -14.15, 0.82);
 
-  // Dual monitors with code
-  createMonitor(scene, 10, 1.3, -14.2, codeScreenTex);
-  createMonitor(scene, 12, 1.3, -14.2, codeScreenTex);
-  createChair(scene, 10, -12.6);
-  createChair(scene, 12, -12.6);
+  // Soft grounding contact shadows under table legs
+  const legContactMat = M(0x000000, { transparent: true, opacity: 0.16, roughness: 1 });
+  [
+    [10.9 - 2.58, -14.15 - 0.505],
+    [10.9 + 2.58, -14.15 - 0.505],
+    [10.9 - 2.58, -14.15 + 0.505],
+    [10.9 + 2.58, -14.15 + 0.505]
+  ].forEach(([cx, cz]) => {
+    const pad = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.24), legContactMat);
+    pad.rotation.x = -Math.PI / 2;
+    pad.position.set(cx, 0.005, cz);
+    scene.add(pad);
+  });
 
-  // Book shelf
-  box(scene, 4, 0.06, 0.5, M(C.black), 11, 2.6, -14.5);
-  createBook(scene, 9.6, 2.72, -14.5, C.navy);
-  createBook(scene, 9.8, 2.72, -14.5, C.orange);
-  createBook(scene, 10.0, 2.72, -14.5, 0x2f6bff);
+  // Dual large monitors with stands, keyboards, mice, and glowing dark VS Code IDE screens
+  createCodingWorkstation(scene, 9.7, -14.15, 'robot_ai.py', 'python');
+  createCodingWorkstation(scene, 12.1, -14.15, 'controller.cpp', 'cpp');
 
-  // Robot car on shelf
-  createCar(scene, 10.9, 2.63, -14.5);
+  // Two ergonomic chairs with black mesh backs and vibrant orange seat cushions, tucked under desk
+  createChair(scene, 9.7, -13.35, 0, { orangeSeat: true });
+  createChair(scene, 12.1, -13.35, 0, { orangeSeat: true });
 
-  // Coffee mug
-  createMug(scene, 11.6, 2.66, -14.5);
+  // Floating black shelf with warm LED strip underneath, 3 stacked books, RC car, white mug & waving robot mascot
+  createFloatingShelfWithProps(scene, 10.9, 2.45, -14.58, anim);
 
-  // Small mascot on shelf
-  const codingBot = createRobot(scene, 12.3, 2.63, -14.5, 0.3);
-  anim.head = codingBot;
+  // Right industrial rack: base 2-door cabinet with silver handles, 2 black </> boxes, clear electronics box, and quadcopter drone ON top shelf
+  createCodingZoneRack(scene, 14.1, -14.25);
 
-  // Metal rack with drone
-  createRack(scene, 15.5, -14.3, 0, 2.2);
-  createDrone(scene, 15.5, 2.7, -14.3);
+  // Soft directional window daylight illuminating the workstation from the right
+  const windowLight = new THREE.DirectionalLight(0xfff5e6, 0.85);
+  windowLight.position.set(17.5, 5.2, -11.5);
+  windowLight.target.position.set(10.9, 1.0, -14.15);
+  scene.add(windowLight);
+  scene.add(windowLight.target);
 
   // ━━━━━━━ ZONE WALL MURALS ━━━━━━━
   // 3D Printing Zone mural (left bay, reference-matched full painted wall)
   create3DPrintingMural(scene);
-  // Coding Zone mural (right bay)
+  // Coding Zone mural (right bay, reference-matched full painted wall)
   createCodingZoneMural(scene);
   // Main centre wall mural: Build•Learn•Innovate + robot mascot + tech icons
   createMainWallMural(scene);
-
-  // Far right corner plant
-  createPlant(scene, 18, 2.2, -14.3, 0.5);
 
   return anim;
 }

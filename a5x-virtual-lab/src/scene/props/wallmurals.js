@@ -800,63 +800,304 @@ export function create3DPrintingMural(scene) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════
-   3. CODING ZONE MURAL
-   Back wall, x = 11, z = -14.73   y = 4.4, H = 2.2m
-   Canvas: 2048 × 480
+   3. CODING ZONE MURAL (Reference-matched full painted wall)
+   Back wall, x = 11.0, z = -14.78   Full wall height (5.76m), W = 8.5m
+   Canvas: 4096 × 2764
+   Features:
+   • Warm cream base (#fff1e3) painted directly on wall (no floating board)
+   • Elongated navy hexagon title banner with white </> and "Coding" / "Zone"
+   • Dynamic offset orange shadow shape behind title banner
+   • Stepped orange circuit traces on both sides of title
+   • Left vertical column of 4 stacked orange-outline hexagons (Python, C++, </>, GitHub)
+   • Bottom-left bold orange diagonal stripes
+   • Right bold orange diagonal stripe behind storage rack
+   • Dark skirting board along floor line
 ═══════════════════════════════════════════════════════════════════ */
 export function createCodingZoneMural(scene) {
-  const W = 2048, H = 480;
+  const W = 4096, H = 2764;
   const tex = canvasTex(W, H, (g) => {
-    g.fillStyle = '#fff8f0'; g.fillRect(0, 0, W, H);
+    // 1. Base Wall Colour: warm cream/peach (seamless blend with room back wall)
+    g.fillStyle = '#fff1e3';
+    g.fillRect(0, 0, W, H);
 
-    // Diagonal accents
+    // 2. Dark skirting board along bottom (matching room floor baseboard)
+    g.fillStyle = '#1c1c20';
+    g.fillRect(0, H - 42, W, 42);
+
+    // 3. Bottom-Left Bold Orange Diagonal Stripes
     g.fillStyle = '#ff7a00';
-    g.beginPath(); g.moveTo(0,0); g.lineTo(80,0); g.lineTo(0,H); g.closePath(); g.fill();
-    g.fillStyle = '#14284b';
-    g.beginPath(); g.moveTo(80,0); g.lineTo(130,0); g.lineTo(50,H); g.lineTo(0,H); g.closePath(); g.fill();
+    // Stripe 1 (outer lower)
+    g.beginPath();
+    g.moveTo(0, 2460);
+    g.lineTo(240, 2220);
+    g.lineTo(760, 2740);
+    g.lineTo(520, 2740);
+    g.closePath();
+    g.fill();
+
+    // Stripe 2 (inner wider stripe)
+    g.beginPath();
+    g.moveTo(260, 2740);
+    g.lineTo(840, 2160);
+    g.lineTo(1080, 2400);
+    g.lineTo(500, 2740);
+    g.closePath();
+    g.fill();
+
+    // 4. Right Bold Orange Diagonal Stripe (painted behind the industrial rack)
     g.fillStyle = '#ff7a00';
-    g.beginPath(); g.moveTo(W,0); g.lineTo(W-80,0); g.lineTo(W,H); g.closePath(); g.fill();
+    g.beginPath();
+    g.moveTo(3340, 2740);
+    g.lineTo(3920, 1380);
+    g.lineTo(4096, 1380);
+    g.lineTo(4096, 1720);
+    g.lineTo(3660, 2740);
+    g.closePath();
+    g.fill();
+
+    // 5. Left Vertical Column: 4 Stacked Orange-Outline Hexagons
+    const hx = 410;
+    const hexRadius = 142;
+    const hexY = [620, 1020, 1420, 1820];
+
+    function drawHexOutline(cx, cy, r) {
+      g.strokeStyle = '#ff7a00';
+      g.lineWidth = 18;
+      g.lineJoin = 'round';
+      g.lineCap = 'round';
+      g.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * 60 - 30) * Math.PI / 180;
+        const px = cx + r * Math.cos(a);
+        const py = cy + r * Math.sin(a);
+        if (i === 0) g.moveTo(px, py); else g.lineTo(px, py);
+      }
+      g.closePath();
+      g.stroke();
+    }
+
+    // Hexagon 1: Python Logo
+    drawHexOutline(hx, hexY[0], hexRadius);
+    {
+      const cy = hexY[0];
+      // Blue upper snake
+      g.fillStyle = '#3776ab';
+      g.beginPath();
+      g.arc(hx - 18, cy - 32, 34, Math.PI, Math.PI * 2);
+      g.lineTo(hx + 28, cy - 32);
+      g.arc(hx + 28, cy - 14, 18, -Math.PI / 2, Math.PI / 2);
+      g.lineTo(hx - 2, cy - 14);
+      g.arc(hx - 2, cy + 8, 22, -Math.PI / 2, Math.PI / 2);
+      g.lineTo(hx - 18, cy + 30);
+      g.arc(hx - 18, cy + 18, 12, Math.PI / 2, Math.PI * 1.5);
+      g.closePath();
+      g.fill();
+      // Blue eye dot (yellow)
+      g.fillStyle = '#ffd43b';
+      g.beginPath();
+      g.arc(hx - 24, cy - 40, 7, 0, Math.PI * 2);
+      g.fill();
+
+      // Yellow lower snake
+      g.fillStyle = '#ffd43b';
+      g.beginPath();
+      g.arc(hx + 18, cy + 32, 34, 0, Math.PI);
+      g.lineTo(hx - 28, cy + 32);
+      g.arc(hx - 28, cy + 14, 18, Math.PI / 2, -Math.PI / 2);
+      g.lineTo(hx + 2, cy + 14);
+      g.arc(hx + 2, cy - 8, 22, Math.PI / 2, -Math.PI / 2);
+      g.lineTo(hx + 18, cy - 30);
+      g.arc(hx + 18, cy - 18, 12, -Math.PI / 2, Math.PI / 2);
+      g.closePath();
+      g.fill();
+      // Yellow eye dot (blue)
+      g.fillStyle = '#3776ab';
+      g.beginPath();
+      g.arc(hx + 24, cy + 40, 7, 0, Math.PI * 2);
+      g.fill();
+    }
+
+    // Hexagon 2: C++
+    drawHexOutline(hx, hexY[1], hexRadius);
+    {
+      const cy = hexY[1];
+      g.fillStyle = '#14284b';
+      g.font = '900 114px "Segoe UI", Arial, sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('C++', hx, cy + 2);
+    }
+
+    // Hexagon 3: </>
+    drawHexOutline(hx, hexY[2], hexRadius);
+    {
+      const cy = hexY[2];
+      g.fillStyle = '#14284b';
+      g.font = '900 120px monospace, "Courier New", sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('</>', hx, cy + 2);
+    }
+
+    // Hexagon 4: GitHub Octocat
+    drawHexOutline(hx, hexY[3], hexRadius);
+    {
+      const cy = hexY[3];
+      g.fillStyle = '#14284b';
+      // Head
+      g.beginPath();
+      g.arc(hx, cy + 6, 54, 0, Math.PI * 2);
+      g.fill();
+      // Left ear
+      g.beginPath();
+      g.moveTo(hx - 44, cy - 16);
+      g.lineTo(hx - 58, cy - 64);
+      g.lineTo(hx - 16, cy - 42);
+      g.closePath();
+      g.fill();
+      // Right ear
+      g.beginPath();
+      g.moveTo(hx + 44, cy - 16);
+      g.lineTo(hx + 58, cy - 64);
+      g.lineTo(hx + 16, cy - 42);
+      g.closePath();
+      g.fill();
+      // Body arc
+      g.beginPath();
+      g.moveTo(hx - 46, cy + 46);
+      g.quadraticCurveTo(hx - 62, cy + 86, hx - 28, cy + 96);
+      g.lineTo(hx + 28, cy + 96);
+      g.quadraticCurveTo(hx + 62, cy + 86, hx + 46, cy + 46);
+      g.closePath();
+      g.fill();
+    }
+
+    // 6. Title Banner: Navy Rounded Hexagon with Offset Orange Shadow
+    const bx = 2050, by = 640;
+    const bw = 1760, bh = 430;
+    const inX = 160;
+
+    function drawHexBanner(cx, cy, w, h, inset) {
+      g.beginPath();
+      g.moveTo(cx - w / 2 + inset, cy - h / 2);
+      g.lineTo(cx + w / 2 - inset, cy - h / 2);
+      g.lineTo(cx + w / 2, cy);
+      g.lineTo(cx + w / 2 - inset, cy + h / 2);
+      g.lineTo(cx - w / 2 + inset, cy + h / 2);
+      g.lineTo(cx - w / 2, cy);
+      g.closePath();
+    }
+
+    // Offset orange shadow banner
+    g.fillStyle = '#ff7a00';
+    drawHexBanner(bx + 28, by + 32, bw, bh, inX);
+    g.fill();
+
+    // Front navy banner
     g.fillStyle = '#14284b';
-    g.beginPath(); g.moveTo(W-80,0); g.lineTo(W-130,0); g.lineTo(W-50,H); g.lineTo(W,H); g.closePath(); g.fill();
+    drawHexBanner(bx, by, bw, bh, inX);
+    g.fill();
 
-    g.fillStyle = '#ff7a00'; g.fillRect(0, H-12, W, 12);
+    // Large white </> symbol inside banner
+    const iconX = bx - bw / 2 + 320, iconY = by;
+    g.strokeStyle = '#ffffff';
+    g.lineWidth = 26;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
 
-    const pad = 160;
-    sriLogo(g, pad+70, 100, 64);
+    // <
+    g.beginPath();
+    g.moveTo(iconX - 45, iconY - 70);
+    g.lineTo(iconX - 105, iconY);
+    g.lineTo(iconX - 45, iconY + 70);
+    g.stroke();
 
-    g.strokeStyle = '#14284b'; g.lineWidth = 5;
-    g.beginPath(); g.moveTo(pad+185, 24); g.lineTo(pad+185, 188); g.stroke();
+    // /
+    g.beginPath();
+    g.moveTo(iconX - 18, iconY + 85);
+    g.lineTo(iconX + 18, iconY - 85);
+    g.stroke();
 
-    hexBadge(g, pad+248, 100, 64, '</>');
+    // >
+    g.beginPath();
+    g.moveTo(iconX + 45, iconY - 70);
+    g.lineTo(iconX + 105, iconY);
+    g.lineTo(iconX + 45, iconY + 70);
+    g.stroke();
 
-    txt(g, 'Coding Zone', pad+360, 72, 68, '#14284b', 'left', 'top');
-    g.fillStyle = '#ff7a00'; g.fillRect(pad+360, 150, 500, 6);
-    txt(g, 'Python  ›  C++  ›  Web Dev  ›  GitHub', pad+360, 168, 30, '#14284b', 'left', 'top');
+    // Two-line bold white title: "Coding" / "Zone"
+    const textX = bx + 40;
+    g.fillStyle = '#ffffff';
+    g.font = '900 162px "Segoe UI", Arial, sans-serif';
+    g.textAlign = 'left';
+    g.textBaseline = 'middle';
+    g.fillText('Coding', textX, by - 86);
+    g.fillText('Zone', textX, by + 86);
 
-    circuit(g, W - 340, 70, 1);
+    // 7. Orange Circuit Traces (stepping out with circular dots)
+    g.strokeStyle = '#ff7a00';
+    g.fillStyle = '#ff7a00';
+    g.lineWidth = 14;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
 
-    const steps = [
-      { l:'Python',  f:ico.python },
-      { l:'C++',     f:ico.cpp },
-      { l:'Web Dev', f:ico.webdev },
-      { l:'GitHub',  f:ico.github },
-    ];
-    const cW=220, cH=200, arrowW=52;
-    const totalW = steps.length*cW + (steps.length-1)*arrowW;
-    let cx = (W - totalW)/2 + cW/2;
-    const cy = 350;
-    steps.forEach(({ l, f }, i) => {
-      iconCard(g, cx, cy, cW, cH, f, l);
-      if (i < steps.length-1) arrowRight(g, cx + cW/2 + arrowW/2, cy, 20);
-      cx += cW + arrowW;
-    });
+    function dot(x, y, r = 18) {
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fill();
+    }
+
+    // Top-left traces
+    g.beginPath();
+    g.moveTo(1110, 560);
+    g.lineTo(890, 560);
+    g.lineTo(810, 480);
+    g.lineTo(540, 480);
+    g.stroke();
+    dot(540, 480);
+    dot(810, 480);
+
+    g.beginPath();
+    g.moveTo(1010, 430);
+    g.lineTo(760, 430);
+    g.lineTo(680, 350);
+    g.lineTo(490, 350);
+    g.stroke();
+    dot(490, 350);
+
+    // Right traces
+    g.beginPath();
+    g.moveTo(2980, 640);
+    g.lineTo(3210, 640);
+    g.lineTo(3290, 720);
+    g.lineTo(3540, 720);
+    g.stroke();
+    dot(3540, 720);
+    dot(3290, 720);
+
+    g.beginPath();
+    g.moveTo(3070, 530);
+    g.lineTo(3290, 530);
+    g.lineTo(3370, 450);
+    g.lineTo(3610, 450);
+    g.stroke();
+    dot(3610, 450);
   });
 
+  // Material: Matte paint look (roughness: 0.85, metalness: 0)
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    roughness: 0.85,
+    metalness: 0,
+  });
+  tex.anisotropy = 4;
+
+  // Mesh: full wall height (y=0.12 to 5.88, h=5.76m, w=8.5m)
   const mesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(10.0, 2.3),
-    new THREE.MeshBasicMaterial({ map: tex })
+    new THREE.PlaneGeometry(8.5, 5.76),
+    mat
   );
-  mesh.position.set(11, 4.4, -14.73);
+  mesh.position.set(11.0, 3.0, -14.78);
   scene.add(mesh);
 }
 
