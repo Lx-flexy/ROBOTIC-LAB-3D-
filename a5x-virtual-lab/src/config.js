@@ -97,6 +97,16 @@ export const ZONES = [
     r: 5.5,
     icon: '⚡',
   },
+  {
+    id: 'meeting',
+    title: 'Meeting Room',
+    desc: 'Collaboration & discussion space with conference table, presentation display, and panoramic campus window.',
+    stand: [21.5, 4.8],
+    yaw: -Math.PI / 2,
+    center: [22.6, 4.8],
+    r: 3.5,
+    icon: '👥',
+  },
 ];
 
 export const HOTSPOTS = [
@@ -111,6 +121,8 @@ export const HOTSPOTS = [
   { id: 'hw_instruments', pos: [19.2, 1.25, 13.65], title: 'Test & Measurement Bench', desc: 'Dual-channel digital storage oscilloscope displaying real-time waveforms alongside a 30V / 5A precision bench DC power supply.', zone: 'hardware' },
   { id: 'hw_components', pos: [19.4, 1.65, 10.85], title: 'Component Storage Rack', desc: '12 organized transparent parts bins holding microcontrollers, sensors, actuators, motor drivers, communication modules, and passive components.', zone: 'hardware' },
   { id: 'hw_pegboard', pos: [19.6, 2.0, 8.15], title: 'Hardware Tool Pegboard', desc: 'Perforated tool board with pliers, precision screwdrivers, hot glue gun, digital multimeter, side cutters, and tape.', zone: 'hardware' },
+  { id: 'mr_tv', pos: [22.8, 2.15, 2.3], title: 'Smart Presentation Display', desc: '4K interactive presentation display showing the Autonomous Robotics System Architecture & Strategic Roadmap.', zone: 'meeting' },
+  { id: 'mr_table', pos: [22.8, 1.1, 4.8], title: 'Discussion Conference Table', desc: 'Solid oak conference table with central cable management and ergonomic seating for collaborative team planning.', zone: 'meeting' },
 ];
 
 /* Wall text arrays for painted graphics */

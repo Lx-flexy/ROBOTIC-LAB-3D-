@@ -21,8 +21,20 @@ const COLLIDERS = [
   { xMin: -14, xMax: -8, zMin: -14.9, zMax: -13.3 },
   { xMin: -3, xMax: 3, zMin: -14.9, zMax: -13.3 },
   { xMin: 8, xMax: 14, zMin: -14.9, zMax: -13.3 },
-  // Right wall cabinet
-  { xMin: 18.5, xMax: 20, zMin: -14, zMax: 14 },
+  // Right wall North section (z = -14 to 4.15)
+  { xMin: 18.5, xMax: 20.2, zMin: -14, zMax: 4.15 },
+  // Right wall South section / Hardware Zone (z = 5.45 to 14.5)
+  { xMin: 18.5, xMax: 20.2, zMin: 5.45, zMax: 14.5 },
+  // Doorway blocker (active when door is closed)
+  { id: 'door_passage', xMin: 19.2, xMax: 20.2, zMin: 4.15, zMax: 5.45 },
+  // Meeting Room North wall (z = 2.2)
+  { xMin: 19.8, xMax: 25.6, zMin: 1.8, zMax: 2.3 },
+  // Meeting Room South wall (z = 7.4)
+  { xMin: 19.8, xMax: 25.6, zMin: 7.3, zMax: 7.8 },
+  // Meeting Room East wall (x = 25.4)
+  { xMin: 25.2, xMax: 26.0, zMin: 2.2, zMax: 7.4 },
+  // Meeting Room Conference Table
+  { xMin: 21.4, xMax: 24.2, zMin: 4.0, zMax: 5.6 },
   // Testing zone racks
   { xMin: -20, xMax: -18.5, zMin: -8.5, zMax: 12.5 },
   // Front wall racks
@@ -30,6 +42,25 @@ const COLLIDERS = [
   // Left wall racks near testing
   { xMin: -14, xMax: -11, zMin: 6, zMax: 10 },
 ];
+
+/** Dynamically toggle door collision between closed (blocks doorway) and open (blocks open leaf) */
+export function setDoorColliderOpen(isOpen) {
+  const passageIdx = COLLIDERS.findIndex((c) => c.id === 'door_passage');
+  const leafIdx = COLLIDERS.findIndex((c) => c.id === 'door_leaf');
+
+  if (isOpen) {
+    if (passageIdx !== -1) COLLIDERS.splice(passageIdx, 1);
+    if (leafIdx === -1) {
+      // Leaf open into lab at z = 4.15m, x = 18.5 to 19.8m
+      COLLIDERS.push({ id: 'door_leaf', xMin: 18.45, xMax: 19.8, zMin: 4.05, zMax: 4.25 });
+    }
+  } else {
+    if (leafIdx !== -1) COLLIDERS.splice(leafIdx, 1);
+    if (passageIdx === -1) {
+      COLLIDERS.push({ id: 'door_passage', xMin: 19.2, xMax: 20.2, zMin: 4.15, zMax: 5.45 });
+    }
+  }
+}
 
 export class FirstPersonControls {
   constructor(camera, domElement, stickEl) {
@@ -174,9 +205,16 @@ export class FirstPersonControls {
     pos.x += (-sinY * fwd + cosY * strafe) * speed;
     pos.z += (-cosY * fwd - sinY * strafe) * speed;
 
-    // Clamp to hall bounds
-    pos.x = Math.max(this.bounds.xMin, Math.min(this.bounds.xMax, pos.x));
-    pos.z = Math.max(this.bounds.zMin, Math.min(this.bounds.zMax, pos.z));
+    // Dynamic boundary clamping (Main hall + Meeting room annex)
+    if (pos.x > 19.4) {
+      // Inside Meeting Room annex
+      pos.x = Math.min(25.0, pos.x);
+      pos.z = Math.max(2.4, Math.min(7.2, pos.z));
+    } else {
+      // Inside Main Lab
+      pos.x = Math.max(this.bounds.xMin, pos.x);
+      pos.z = Math.max(this.bounds.zMin, Math.min(this.bounds.zMax, pos.z));
+    }
 
     // Collision response (slide along surfaces)
     if (this.hitTest(pos.x, pos.z)) {

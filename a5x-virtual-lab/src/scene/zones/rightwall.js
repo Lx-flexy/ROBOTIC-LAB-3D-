@@ -19,6 +19,7 @@ import {
 } from '../props/equipment.js';
 import { BRAND_SHORT, WALL_TEXTS } from '../../config.js';
 import { createRoboticsLabMural, createRightWallSideMural } from '../props/wallmurals.js';
+import { createInteractiveDoor } from '../props/door.js';
 
 export function buildRightWall(scene) {
   const RW = 19.78;          // Right wall inner surface X
@@ -347,11 +348,12 @@ export function buildRightWall(scene) {
   // ── (F) Upgraded Architectural Window with Realistic Daylight Backdrop, Sill, Plant & Blinds (center at z = 1.0, y = 3.0) ──
   createWallWindow(scene, RW, 3.0, 1.0, RR, 2.0, 1.8);
 
-  // ── (G) Fire Extinguisher with Black Steel Mounting Bracket & Red Safety Sign (z = 3.6, y = 1.85) ──
-  createWallMountedExtinguisher(scene, RW, RR, 3.6, 1.85);
+  // ── (G) Fire Extinguisher with Black Steel Mounting Bracket & Red Safety Sign (z = 5.75, y = 1.55) ──
+  // Moved to the right of the door so the A5X mascot tagline "BUILD • TEST • COMPETE • INNOVATE" is 100% visible
+  createWallMountedExtinguisher(scene, RW, RR, 5.75, 1.55);
 
-  // ── (H) Door to adjoining space with "ROBOTICS LAB" Header Sign & Room Plaque (center at z = 4.8) ──
-  createWallDoor(scene, RW, 0, 4.8, RR, 1.6, 3.4);
+  // ── (H) Interactive Hinged Door leading to Meeting Room (pivot at hinge z = 4.15m, center z = 4.8m) ──
+  createInteractiveDoor(scene);
 
   // ── (I) Two Floating Wooden Shelves with Plant & Test Drone beside Door (z = 5.95) ──
   createWallShelvesUnit(scene, RW, RR, 5.95);

@@ -81,8 +81,10 @@ export function buildShell(scene) {
   box(scene, 40, 6, 0.4, wallMat, 0, 3, -15);
   // Left wall (x=-20)
   box(scene, 0.4, 6, 30, wallMat, -20, 3, 0);
-  // Right wall (x=20)
-  box(scene, 0.4, 6, 30, wallMat, 20, 3, 0);
+  // Right wall (x=20, with open doorway at z = 4.15 to 5.45 leading to Meeting Room)
+  box(scene, 0.4, 6, 19.15, wallMat, 20, 3, -5.425);   // North section (z = -15 to 4.15)
+  box(scene, 0.4, 6, 9.55, wallMat, 20, 3, 10.225);    // South section (z = 5.45 to 15)
+  box(scene, 0.4, 3.55, 1.30, wallMat, 20, 4.225, 4.8); // Header above doorway (y = 2.45 to 6)
   // ──────── FRONT ENTRANCE WALL (with Door & Window Openings at z=15) ────────
   // Thickness = 0.5m (from z=14.75 to 15.25)
   // 1. Above openings (y = 4.4 to 6.0, h = 1.6)
@@ -107,7 +109,8 @@ export function buildShell(scene) {
   // Skirting boards (navy at floor level on back wall)
   box(scene, 40, 0.12, 0.08, M(C.navy), 0, 0.06, -14.78);
   box(scene, 0.08, 0.12, 30, M(C.navy), -19.78, 0.06, 0);
-  box(scene, 0.08, 0.12, 30, M(C.navy), 19.78, 0.06, 0);
+  box(scene, 0.08, 0.12, 19.15, M(C.navy), 19.78, 0.06, -5.425); // Right skirting north of door
+  box(scene, 0.08, 0.12, 9.55, M(C.navy), 19.78, 0.06, 10.225);  // Right skirting south of door
 
   // Orange ceiling cornice / crown molding (placed neatly at ceiling junction y=5.88)
   box(scene, 40, 0.12, 0.15, M(C.orange), 0, 5.88, -14.88);

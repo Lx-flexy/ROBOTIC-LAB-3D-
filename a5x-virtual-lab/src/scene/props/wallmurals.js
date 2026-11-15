@@ -2000,12 +2000,18 @@ export function createRightWallSideMural(scene) {
     g.beginPath();
     g.roundRect(badgeX - 160, badgeY + badgeRadius + 120, 320, 6, 3);
     g.fill();
+
+    // 5. Open Doorway Cutout (z = 4.15 to 5.45, y = 0.05 to 2.45)
+    // Clear the doorway opening completely so the player can see through into the Meeting Room
+    g.clearRect(1405, 855, 335, 595);
   });
 
   const mat = new THREE.MeshStandardMaterial({
     map: tex,
     roughness: 0.9,
     metalness: 0.0,
+    transparent: true,
+    alphaTest: 0.5,
   });
 
   // Physical plane covering from z = -1.5 to z = +6.7 (8.2m wide, 5.8m tall)

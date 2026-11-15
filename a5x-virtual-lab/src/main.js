@@ -11,6 +11,8 @@ import { buildBackWall } from './scene/zones/backwall.js';
 import { buildTestingZone } from './scene/zones/testing.js';
 import { buildRightWall } from './scene/zones/rightwall.js';
 import { buildHardwareZone } from './scene/zones/hardware.js';
+import { buildMeetingRoom } from './scene/zones/meeting.js';
+import { getInteractiveDoor } from './scene/props/door.js';
 import { FirstPersonControls } from './controls/FirstPersonControls.js';
 import { createLoader } from './ui/loader.js';
 import { createMenu, createZoneCard } from './ui/menu.js';
@@ -75,7 +77,10 @@ const rightWallAnim = buildRightWall(scene);
 loader.update(0.85);
 
 const hardwareAnim = buildHardwareZone(scene);
-loader.update(0.95);
+loader.update(0.92);
+
+const meetingAnim = buildMeetingRoom(scene);
+loader.update(0.98);
 
 // ══════════════════ CONTROLS ══════════════════
 const controls = new FirstPersonControls(camera, renderer.domElement, $('#stick'));
@@ -86,6 +91,13 @@ const infoPanel = createInfoPanel();
 const minimap = createMinimap(camera);
 
 createMenu((zone) => {
+  // If teleporting to meeting room, make sure the door is open so the user sees inside
+  if (zone.id === 'meeting') {
+    const door = getInteractiveDoor();
+    if (door && !door.isOpen) {
+      door.toggle(true);
+    }
+  }
   // Smooth fly-to teleport
   gsap.to(camera.position, {
     x: zone.stand[0],
@@ -142,11 +154,47 @@ $('#skipBtn')?.addEventListener('click', () => {
   startFreeMode();
 });
 
-// ── Click for hotspot info ──
-renderer.domElement.addEventListener('click', () => {
+// ── Door interaction & Hotspot click ──
+const raycaster = new THREE.Raycaster();
+const mouseVec = new THREE.Vector2();
+
+function handleInteraction(clientX, clientY) {
   if (state !== 'free') return;
+  const door = getInteractiveDoor();
+  if (door) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouseVec.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    mouseVec.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouseVec, camera);
+    const hits = raycaster.intersectObjects(door.doorMeshes, true);
+    if (hits.length > 0 && hits[0].distance < 6.5) {
+      door.toggle();
+      return;
+    }
+  }
   const hotspot = findNearestHotspot(camera, 5);
   if (hotspot) infoPanel.show(hotspot);
+}
+
+renderer.domElement.addEventListener('click', (e) => {
+  handleInteraction(e.clientX, e.clientY);
+});
+
+// Key E for door open/close
+window.addEventListener('keydown', (e) => {
+  if (state !== 'free') return;
+  if (e.key === 'e' || e.key === 'E') {
+    const door = getInteractiveDoor();
+    if (door && camera.position.distanceTo(door.position) < 4.0) {
+      door.toggle();
+    }
+  }
+});
+
+// Action prompt click (for both desktop and mobile tap)
+$('#action-prompt')?.addEventListener('click', () => {
+  const door = getInteractiveDoor();
+  if (door) door.toggle();
 });
 
 // ══════════════════ ANIMATION LOOP ══════════════════
@@ -230,6 +278,18 @@ renderer.setAnimationLoop(() => {
       if (nearestZone !== currentZone) {
         currentZone = nearestZone;
         zoneCard.show(nearestZone);
+      }
+      // Check interactive door proximity for prompt
+      const door = getInteractiveDoor();
+      const promptEl = $('#action-prompt');
+      if (door && promptEl) {
+        const dDoor = camera.position.distanceTo(door.position);
+        if (dDoor < 4.0) {
+          promptEl.classList.remove('hidden');
+          door.updatePromptUI();
+        } else {
+          promptEl.classList.add('hidden');
+        }
       }
       // Update minimap
       minimap.update();

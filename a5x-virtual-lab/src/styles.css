@@ -140,6 +140,54 @@ html, body {
   line-height: 1.45; opacity: 0.9;
 }
 
+/* ── Action Prompt (Door Interaction) ── */
+.action-prompt {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(75px, 11vh, 105px);
+  transform: translateX(-50%);
+  background: rgba(20, 40, 75, 0.94);
+  backdrop-filter: blur(12px);
+  border: 2px solid var(--orange);
+  border-radius: 999px;
+  padding: 10px 22px;
+  color: #fff;
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  z-index: 35;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease, opacity 0.2s ease, background 0.15s ease;
+  user-select: none;
+}
+.action-prompt:hover {
+  background: rgba(255, 122, 0, 0.9);
+  transform: translateX(-50%) scale(1.04);
+}
+.action-prompt:active {
+  transform: translateX(-50%) scale(0.97);
+}
+.action-prompt.hidden {
+  display: none !important;
+}
+.action-prompt .prompt-icon {
+  font-size: 1.25rem;
+}
+.action-prompt .prompt-text b {
+  color: var(--orange);
+  background: rgba(255, 255, 255, 0.15);
+  padding: 2px 7px;
+  border-radius: 5px;
+  margin: 0 2px;
+}
+.action-prompt:hover .prompt-text b {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.25);
+}
+
 /* ── Menu ── */
 .menu-toggle-btn {
   position: fixed; top: clamp(10px, 1.5vh, 16px); left: clamp(10px, 1.5vw, 16px);

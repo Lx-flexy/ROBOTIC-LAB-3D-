@@ -23,23 +23,54 @@ export function createMinimap(camera) {
     });
   }
 
-  // Map world coords to canvas
-  const mapX = (wx) => ((wx - HALL.xMin) / (HALL.xMax - HALL.xMin)) * W;
-  const mapZ = (wz) => ((HALL.zMax - wz) / (HALL.zMax - HALL.zMin)) * H;
+  // Map world coords to canvas (encompassing Main Hall + Meeting Room annex)
+  const minX = -20.5, maxX = 26.2, minZ = -15.5, maxZ = 15.5;
+  const mapX = (wx) => 4 + ((wx - minX) / (maxX - minX)) * (W - 8);
+  const mapZ = (wz) => 4 + ((maxZ - wz) / (maxZ - minZ)) * (H - 8);
 
   return {
     update() {
       if (!visible) return;
       ctx.clearRect(0, 0, W, H);
 
-      // Floor
+      // Floor background
       ctx.fillStyle = '#1a1a2e';
       ctx.fillRect(0, 0, W, H);
 
-      // Hall outline
+      // Main Hall outline
+      const hX1 = mapX(-20), hX2 = mapX(20);
+      const hZ1 = mapZ(15), hZ2 = mapZ(-15);
+      const dZ1 = mapZ(5.45), dZ2 = mapZ(4.15); // Doorway gap
+
       ctx.strokeStyle = '#ff7a00';
       ctx.lineWidth = 2;
-      ctx.strokeRect(2, 2, W - 4, H - 4);
+
+      // Draw Main Hall perimeter with doorway opening
+      ctx.beginPath();
+      ctx.moveTo(hX1, hZ1);
+      ctx.lineTo(hX2, hZ1);
+      ctx.lineTo(hX2, dZ1); // Down to door opening
+      ctx.moveTo(hX2, dZ2); // Across door opening
+      ctx.lineTo(hX2, hZ2); // Up to back wall
+      ctx.lineTo(hX1, hZ2);
+      ctx.closePath();
+      ctx.stroke();
+
+      // Meeting Room annex outline
+      const mrX1 = mapX(19.8), mrX2 = mapX(25.4);
+      const mrZ1 = mapZ(7.4), mrZ2 = mapZ(2.2);
+
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(mrX1, mrZ2, mrX2 - mrX1, mrZ1 - mrZ2);
+
+      ctx.beginPath();
+      ctx.moveTo(mrX1, dZ1);
+      ctx.lineTo(mrX1, mrZ1);
+      ctx.lineTo(mrX2, mrZ1);
+      ctx.lineTo(mrX2, mrZ2);
+      ctx.lineTo(mrX1, mrZ2);
+      ctx.lineTo(mrX1, dZ2);
+      ctx.stroke();
 
       // Tables
       ctx.fillStyle = '#deb887';
@@ -50,6 +81,8 @@ export function createMinimap(camera) {
       };
       drawBox(-9, -4, -5, 9);
       drawBox(4, 9, -5, 9);
+      // Meeting room table
+      drawBox(21.6, 24.0, 4.2, 5.4);
 
       // Zone areas
       ctx.globalAlpha = 0.25;
@@ -58,7 +91,7 @@ export function createMinimap(camera) {
         const cx = mapX(z.center[0]);
         const cy = mapZ(z.center[1]);
         ctx.beginPath();
-        ctx.arc(cx, cy, z.r * (W / HALL.w), 0, Math.PI * 2);
+        ctx.arc(cx, cy, z.r * ((W - 8) / (maxX - minX)), 0, Math.PI * 2);
         ctx.fill();
       });
       ctx.globalAlpha = 1;
