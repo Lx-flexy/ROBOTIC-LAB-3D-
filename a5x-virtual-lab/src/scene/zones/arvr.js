@@ -139,8 +139,24 @@ export function buildArVrLab(scene) {
     box(g, roomW, roomH, wallThick, wallMat, centerX, floorY + roomH / 2, zMin - wallThick / 2);
     // South Wall (Z = zMax, Immersive Lounge Wall)
     box(g, roomW, roomH, wallThick, wallMat, centerX, floorY + roomH / 2, zMax + wallThick / 2);
-    // East Wall (X = xMax, Large Window Wall)
-    box(g, wallThick, roomH, roomL, wallMat, xMax + wallThick / 2, floorY + roomH / 2, centerZ);
+    // East Wall (X = xMax, Large Window Wall with 12m x 2.3m architectural window opening)
+    const winW = roomL - 2.0; // 12.0m wide window opening (z = 3.40 to 15.40)
+    const winH = 2.30;
+    const winY = 2.10;
+    const winBottomY = winY - winH / 2; // 0.95m
+    const winTopY = winY + winH / 2;    // 3.25m
+    const sillH = winBottomY - floorY;  // 0.90m (y = 0.05 to 0.95)
+    const headerH = ceilingY - winTopY; // 0.40m (y = 3.25 to 3.65)
+    const jambL = (roomL - winW) / 2;   // 1.00m
+
+    // 1. Lower sill spandrel wall below window (y = 0.05 to 0.95)
+    box(g, wallThick, sillH, winW, wallMat, xMax + wallThick / 2, floorY + sillH / 2, centerZ);
+    // 2. Header beam above window (y = 3.25 to 3.65)
+    box(g, wallThick, headerH, winW, wallMat, xMax + wallThick / 2, winTopY + headerH / 2, centerZ);
+    // 3. North wall jamb (z = 2.40 to 3.40)
+    box(g, wallThick, roomH, jambL, wallMat, xMax + wallThick / 2, floorY + roomH / 2, zMin + jambL / 2);
+    // 4. South wall jamb (z = 15.40 to 16.40)
+    box(g, wallThick, roomH, jambL, wallMat, xMax + wallThick / 2, floorY + roomH / 2, zMax - jambL / 2);
 
     // West Wall (X = 20.20 inner surface, adjoining main robotics lab)
     // The main building shell in building.js provides the wall from z = -15 to 15.00 at X in [19.80, 20.20].
@@ -770,6 +786,9 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
 // ─────────────────────────────────────────────────────────────────────────────
 // EAST WINDOW WALL (Left Wall, X = xMax)
 // ─────────────────────────────────────────────────────────────────────────────
+/** Uniform blind pull height constant: exactly ~1/3 of window height (leaving ~2/3 glass clear) */
+export const BLIND_PULL_HEIGHT = 0.77;
+
 function buildEastWindowWall(parent, xMax, cz, floorY, roomL, roomH) {
   const g = new THREE.Group();
   g.position.set(xMax, floorY, cz);
@@ -780,78 +799,173 @@ function buildEastWindowWall(parent, xMax, cz, floorY, roomL, roomH) {
   const winY = 2.10;
   const frameMat = M(0x18181c, { roughness: 0.35, metalness: 0.6 });
 
-  // 1. Soft Daylight Sky & Campus Backdrop
-  const bgTex = canvasTex(1024, 512, (ctx) => {
-    const grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#7dd3fc');
-    grad.addColorStop(0.65, '#e0f2fe');
-    grad.addColorStop(1, '#f8fafc');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 1024, 512);
+  // 1. Soft Daylight Sky & Campus Landscape Backdrop (placed 7.0m behind window outside building)
+  const bgTex = canvasTex(2048, 1024, (ctx) => {
+    // Soft sky gradient with warm sunlit atmosphere
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, 1024);
+    skyGrad.addColorStop(0, '#38bdf8');   // Serene clear blue sky
+    skyGrad.addColorStop(0.35, '#7dd3fc');
+    skyGrad.addColorStop(0.60, '#bae6fd');
+    skyGrad.addColorStop(0.78, '#e0f2fe'); // Light airy horizon
+    skyGrad.addColorStop(1, '#fef3c7');    // Warm sunlit lower mist
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, 2048, 1024);
 
-    // Distant soft green trees
-    ctx.fillStyle = '#4ade80';
-    for (let i = 0; i < 10; i++) {
+    // Soft ambient daytime sun halo in upper sky
+    const sunGrad = ctx.createRadialGradient(1450, 180, 20, 1450, 180, 480);
+    sunGrad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+    sunGrad.addColorStop(0.25, 'rgba(254, 240, 138, 0.40)');
+    sunGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = sunGrad;
+    ctx.beginPath();
+    ctx.arc(1450, 180, 480, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Distant blurred campus buildings / skyline silhouette
+    ctx.fillStyle = 'rgba(148, 163, 184, 0.35)';
+    const buildings = [
+      [120, 560, 180, 220],
+      [340, 520, 220, 260],
+      [680, 570, 260, 210],
+      [1050, 540, 190, 240],
+      [1320, 580, 280, 200],
+      [1720, 530, 220, 250],
+    ];
+    buildings.forEach(([bx, by, bw, bh]) => {
+      ctx.fillRect(bx, by, bw, bh);
+    });
+
+    // Deep background tree line
+    ctx.fillStyle = '#15803d';
+    for (let i = 0; i < 24; i++) {
       ctx.beginPath();
-      ctx.arc(i * 115 + 40, 440, 100, 0, Math.PI * 2);
+      ctx.arc(i * 90 + 20, 720, 95, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Midground lush green trees with varied heights and foliage
     ctx.fillStyle = '#16a34a';
-    for (let i = 0; i < 11; i++) {
+    for (let i = 0; i < 22; i++) {
       ctx.beginPath();
-      ctx.arc(i * 105 - 20, 480, 85, 0, Math.PI * 2);
+      ctx.arc(i * 100 - 30, 760, 110, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Vibrant sunlit foliage clusters
+    ctx.fillStyle = '#22c55e';
+    for (let i = 0; i < 26; i++) {
+      ctx.beginPath();
+      ctx.arc(i * 85 + 45, 800, 90, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Warm sun-dappled leaf highlights
+    ctx.fillStyle = 'rgba(134, 239, 172, 0.45)';
+    for (let i = 0; i < 28; i++) {
+      ctx.beginPath();
+      ctx.arc(i * 80 + 15, 780, 55, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Foreground manicured campus lawn & paved border
+    const lawnGrad = ctx.createLinearGradient(0, 840, 0, 1024);
+    lawnGrad.addColorStop(0, '#15803d');
+    lawnGrad.addColorStop(0.35, '#166534');
+    lawnGrad.addColorStop(1, '#14532d');
+    ctx.fillStyle = lawnGrad;
+    ctx.fillRect(0, 840, 2048, 184);
+
+    // Warm stone path border
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(0, 990, 2048, 34);
   });
+  bgTex.anisotropy = 16;
 
   const bgMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(winW, winH),
-    new THREE.MeshBasicMaterial({ map: bgTex })
+    new THREE.PlaneGeometry(30.0, 10.0),
+    new THREE.MeshBasicMaterial({ map: bgTex, side: THREE.DoubleSide })
   );
-  bgMesh.position.set(0, winY, -0.15);
+  // Placed 7.0m outside the building behind window, elevated slightly to align horizon with sightline
+  bgMesh.position.set(0, winY + 0.8, -7.0);
   g.add(bgMesh);
 
-  // 2. Clear Architectural Glass Window Panes
+  // 2. Clear Architectural Glass Window Panes (light blue tint, high transmission, zero beige wall occlusion)
   const glassMat = new THREE.MeshPhysicalMaterial({
     color: 0xe0f2fe,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.16,
     roughness: 0.05,
-    metalness: 0.1,
-    transmission: 0.88,
+    metalness: 0.05,
+    transmission: 0.90,
     side: THREE.DoubleSide,
     depthWrite: false,
   });
   const glassMesh = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH), glassMat);
-  glassMesh.position.set(0, winY, 0.02);
+  glassMesh.position.set(0, winY, 0.0);
   g.add(glassMesh);
 
-  // 3. Black Window Mullions / Grid Frames
-  // Outer frame perimeter
-  box(g, winW + 0.1, 0.08, 0.12, frameMat, 0, winY + winH / 2, 0);
-  box(g, winW + 0.1, 0.08, 0.12, frameMat, 0, winY - winH / 2, 0);
-  box(g, 0.08, winH + 0.1, 0.12, frameMat, -winW / 2, winY, 0);
-  box(g, 0.08, winH + 0.1, 0.12, frameMat, winW / 2, winY, 0);
+  // 3. Black Window Frame & Mullions
+  // Outer perimeter frame
+  box(g, winW + 0.12, 0.08, 0.26, frameMat, 0, winY + winH / 2, 0);
+  box(g, winW + 0.12, 0.08, 0.26, frameMat, 0, winY - winH / 2, 0);
+  box(g, 0.08, winH + 0.12, 0.26, frameMat, -winW / 2, winY, 0);
+  box(g, 0.08, winH + 0.12, 0.26, frameMat, winW / 2, winY, 0);
 
-  // Vertical mullions dividing into 6 panoramic bays
-  const bayW = winW / 6;
-  for (let m = -2.5; m <= 2.5; m++) {
-    box(g, 0.06, winH, 0.10, frameMat, m * bayW, winY, 0);
-  }
-  // Horizontal transom bar
-  box(g, winW, 0.05, 0.08, frameMat, 0, winY + 0.45, 0);
+  // Bottom architectural window sill plate extending slightly into the room
+  box(g, winW + 0.16, 0.035, 0.32, frameMat, 0, winY - winH / 2 - 0.018, 0.04);
 
-  // 4. Staggered Grey Roller Blinds (partially lowered to realistic heights)
-  const blindMat = M(0x9ca3af, { roughness: 0.85 });
-  const blindHeights = [0.85, 1.30, 0.65, 1.10, 0.90, 1.40];
-  blindHeights.forEach((bh, i) => {
-    const bx = -winW / 2 + bayW / 2 + i * bayW;
-    const by = winY + winH / 2 - bh / 2;
-    // Rolled fabric sheet
-    box(g, bayW - 0.08, bh, 0.015, blindMat, bx, by, 0.05);
-    // Bottom weighted pull hem bar
-    box(g, bayW - 0.06, 0.03, 0.02, frameMat, bx, winY + winH / 2 - bh, 0.055);
+  // 5 Vertical mullions dividing the 12m window into 6 equal 2.0m wide panoramic bays
+  // Mullion boundaries: x = -4.0, -2.0, 0.0, +2.0, +4.0
+  const mullions = [-4.0, -2.0, 0.0, 2.0, 4.0];
+  mullions.forEach((mx) => {
+    box(g, 0.06, winH, 0.14, frameMat, mx, winY, 0);
   });
+
+  // Horizontal transom bar
+  box(g, winW, 0.05, 0.10, frameMat, 0, winY + 0.45, 0);
+
+  // 4. Uniform Grey Roller Blinds (All 6 at identical height BLIND_PULL_HEIGHT, perfectly aligned inside panes)
+  const blindMat = M(0x9ca3af, { roughness: 0.85 });
+  const cassetteMat = M(0x222226, { roughness: 0.4, metalness: 0.5 });
+
+  // Sleek top cassette / valance bar running across entire window top
+  box(g, winW + 0.12, 0.08, 0.10, cassetteMat, 0, winY + winH / 2 - 0.04, 0.05);
+
+  const bayW = winW / 6; // 2.00m per bay
+  // The 6 pane centers are at: -5, -3, -1, +1, +3, +5
+  const bayCenters = [-5.0, -3.0, -1.0, 1.0, 3.0, 5.0];
+
+  bayCenters.forEach((bx) => {
+    const fabricW = bayW - 0.08; // 1.92m wide (4cm neat gap from mullions on both sides)
+    const fabricY = winY + winH / 2 - BLIND_PULL_HEIGHT / 2;
+
+    // Grey fabric roller blind sheet
+    box(g, fabricW, BLIND_PULL_HEIGHT, 0.015, blindMat, bx, fabricY, 0.045);
+
+    // Dark slim bottom hem weight bar
+    box(g, fabricW + 0.01, 0.025, 0.022, frameMat, bx, winY + winH / 2 - BLIND_PULL_HEIGHT - 0.0125, 0.048);
+  });
+
+  // 5. Soft Daylight Wash Illumination
+  // Soft directional daylight coming through the window panes
+  const daylight = new THREE.DirectionalLight(0xfffaed, 0.9);
+  daylight.position.set(0, winY + 4.0, -5.0);
+  daylight.target.position.set(0, 0, 5.0);
+  g.add(daylight);
+  g.add(daylight.target);
+
+  // Soft daylight floor wash patch in front of the windows
+  const patchMat = new THREE.MeshBasicMaterial({
+    color: 0xfffaed,
+    transparent: true,
+    opacity: 0.065,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const floorPatch = new THREE.Mesh(new THREE.PlaneGeometry(winW, 4.2), patchMat);
+  floorPatch.rotation.x = -Math.PI / 2;
+  floorPatch.position.set(0, 0.052, 2.1);
+  g.add(floorPatch);
 
   // Tall corner indoor leafy plant
   createLeafyPlant(g, -winW / 2 + 0.8, 0, 0.8, { isTall: true });
