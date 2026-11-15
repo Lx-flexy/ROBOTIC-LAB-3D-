@@ -18,8 +18,6 @@
 import * as THREE from 'three';
 import { box, cyl } from '../../utils/geometry.js';
 import { M, Bm, C, canvasTex } from '../../utils/materials.js';
-import { createPlant } from '../props/furniture.js';
-import { getBakedFloorTexture } from '../props/floor.js';
 
 export const ARVR_CONFIG = {
   id: 'arvr',
@@ -54,9 +52,9 @@ export function buildArVrLab(scene) {
   const ledWarmMat = Bm(0xfff6e5);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // 1. MARBLE FLOOR SLAB (Exact matching gray marble)
+  // 1. MARBLE FLOOR SLAB (Pristine gray marble, 1.2m tiles, zero stray lines)
   // ═══════════════════════════════════════════════════════════════════════════
-  const floorTex = getBakedFloorTexture();
+  const floorTex = getArVrFloorTexture();
   const floorMat = new THREE.MeshStandardMaterial({
     map: floorTex,
     color: 0xffffff,
@@ -409,11 +407,11 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
       } else if (tier === 1) {
         // Middle shelf: White VR Headset in center & small succulent
         createMiniVrHeadset(g, sx, sy + 0.11, shelfD / 2);
-        createPlant(g, sx + 0.55, sy + shelfT / 2, shelfD / 2, 0.35);
+        createLeafyPlant(g, sx + 0.55, sy + shelfT / 2, shelfD / 2, { scale: 0.65 });
       } else if (tier === 2) {
         // Top shelf: Another VR headset and hanging trailing ivy plant
         createMiniVrHeadset(g, sx - 0.35, sy + 0.11, shelfD / 2);
-        createPlant(g, sx + 0.45, sy + shelfT / 2, shelfD / 2, 0.45);
+        createTrailingIvyPlant(g, sx + 0.45, sy + shelfT / 2, shelfD / 2);
       }
     });
   });
@@ -528,8 +526,8 @@ function buildEastWindowWall(parent, xMax, cz, floorY, roomL, roomH) {
     box(g, bayW - 0.06, 0.03, 0.02, frameMat, bx, winY + winH / 2 - bh, 0.055);
   });
 
-  // Tall corner indoor palm plant
-  createPlant(g, -winW / 2 + 0.8, 0, 0.8, 1.6);
+  // Tall corner indoor leafy plant
+  createLeafyPlant(g, -winW / 2 + 0.8, 0, 0.8, { isTall: true });
 
   parent.add(g);
 }
@@ -679,47 +677,20 @@ function buildImmersiveLounge(parent, cx, zMax, floorY, roomW) {
   g.position.set(cx, floorY, zMax);
   g.rotation.y = Math.PI;
 
-  // 1. Navy Painted Back Wall with White Line-Art VR Headset Graphic
+  // 1. Navy Painted Back Wall with Clean Vector Line-Art VR Headset Graphic
   const wallTex = canvasTex(2048, 1024, (ctx) => {
+    // Deep royal navy matte wall paint
     ctx.fillStyle = '#14284b';
     ctx.fillRect(0, 0, 2048, 1024);
 
-    // White Line-Art Futuristic VR Headset
-    const hx = 1024, hy = 480;
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 14;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    // Subtle paint grain
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.015)';
+    for (let i = 0; i < 20000; i++) {
+      ctx.fillRect(Math.random() * 2048, Math.random() * 1024, 2, 2);
+    }
 
-    // Headset outer visor contour
-    ctx.beginPath();
-    ctx.roundRect(hx - 260, hy - 140, 520, 280, 70);
-    ctx.stroke();
-
-    // Inner visor screen dividing line
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.roundRect(hx - 220, hy - 100, 440, 200, 40);
-    ctx.stroke();
-
-    // Two front sensor cameras
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.arc(hx - 140, hy, 16, 0, Math.PI * 2);
-    ctx.arc(hx + 140, hy, 16, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Two Orange Curved Halo Arcs flanking the headset
-    ctx.strokeStyle = '#ff7a00';
-    ctx.lineWidth = 10;
-    ctx.beginPath();
-    ctx.arc(hx, hy, 360, Math.PI * 0.75, Math.PI * 1.25);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.arc(hx, hy, 360, -Math.PI * 0.25, Math.PI * 0.25);
-    ctx.stroke();
+    // Crisp Vector Line-Art VR Headset (Front View with Nose Cutout, Straps & Optics)
+    drawLoungeHeadsetGraphic(ctx, 1024, 460);
   });
 
   const wallMesh = new THREE.Mesh(
@@ -729,128 +700,54 @@ function buildImmersiveLounge(parent, cx, zMax, floorY, roomW) {
   wallMesh.position.set(0, 1.8, 0.01);
   g.add(wallMesh);
 
-  // 2. Green Artificial Turf Area Rug (6.2m x 3.8m)
+  // 2. Rectangular Artificial-Grass Rug with Realistic Blade Texture (Raised 2.5cm)
   const turfW = 6.20, turfL = 3.80;
-  const turfTex = canvasTex(512, 512, (ctx) => {
-    ctx.fillStyle = '#3a7d2c';
-    ctx.fillRect(0, 0, 512, 512);
-    ctx.fillStyle = '#2d6822';
-    for (let i = 0; i < 8000; i++) {
-      ctx.fillRect(Math.random() * 512, Math.random() * 512, 2, 4);
-    }
-  });
-  const turfMat = new THREE.MeshStandardMaterial({ map: turfTex, roughness: 0.95 });
-  const turfMesh = new THREE.Mesh(new THREE.PlaneGeometry(turfW, turfL), turfMat);
-  turfMesh.rotation.x = -Math.PI / 2;
-  turfMesh.position.set(0, 0.055, 2.30);
-  g.add(turfMesh);
+  const turfThickness = 0.025;
+  const turfY = turfThickness / 2; // y = 0.0125 in local group -> y = 0.0625 to 0.075 in world
+  const turfCenterZ = 2.05;
 
-  // Warm LED edge strip perimeter framing the turf rug
-  const ledTrimMat = Bm(0xffe899);
-  box(g, turfW + 0.04, 0.015, 0.03, ledTrimMat, 0, 0.058, 2.30 - turfL / 2);
-  box(g, turfW + 0.04, 0.015, 0.03, ledTrimMat, 0, 0.058, 2.30 + turfL / 2);
-  box(g, 0.03, 0.015, turfL + 0.04, ledTrimMat, -turfW / 2, 0.058, 2.30);
-  box(g, 0.03, 0.015, turfL + 0.04, ledTrimMat, turfW / 2, 0.058, 2.30);
-
-  // 3. Four Rounded Soft Bean Bags (2 Vibrant Orange, 2 Deep Navy)
-  const beanBags = [
-    { x: -1.9, z: 1.6, col: C.orange, yaw: 0.4 },
-    { x: 1.9, z: 1.6, col: C.navy, yaw: -0.4 },
-    { x: -1.8, z: 3.1, col: C.navy, yaw: 1.2 },
-    { x: 1.8, z: 3.1, col: C.orange, yaw: -1.2 },
-  ];
-  beanBags.forEach((bb) => {
-    createBeanBagMesh(g, bb.x, bb.z, bb.col, bb.yaw);
+  const turfTex = getRealisticTurfTexture();
+  const turfMat = new THREE.MeshStandardMaterial({
+    map: turfTex,
+    roughness: 0.92,
+    metalness: 0.0,
   });
 
-  // 4. Round White Coffee Table in Center
-  const tableTop = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.55, 0.55, 0.03, 24),
-    M(0xffffff, { roughness: 0.3 })
-  );
-  tableTop.position.set(0, 0.42, 2.30);
-  g.add(tableTop);
+  // Solid raised turf slab (no cream border!)
+  const turfSlab = new THREE.Mesh(new THREE.BoxGeometry(turfW, turfThickness, turfL), turfMat);
+  turfSlab.position.set(0, turfY, turfCenterZ);
+  g.add(turfSlab);
 
-  // Hairpin black steel legs
-  for (let a = 0; a < 3; a++) {
-    const ang = (a * Math.PI * 2) / 3;
-    const lx = Math.cos(ang) * 0.40;
-    const lz = 2.30 + Math.sin(ang) * 0.40;
-    cyl(g, 0.012, 0.012, 0.40, M(0x18181c, { metalness: 0.8 }), lx, 0.21, lz, 8);
-  }
+  // Thin Warm LED Strip along outer perimeter edges
+  const ledStripMat = Bm(0xfff4bb);
+  const sw = 0.022, sh = 0.015;
+  const sy = turfThickness;
+  box(g, turfW, sh, sw, ledStripMat, 0, sy, turfCenterZ - turfL / 2 + sw / 2);
+  box(g, turfW, sh, sw, ledStripMat, 0, sy, turfCenterZ + turfL / 2 - sw / 2);
+  box(g, sw, sh, turfL, ledStripMat, -turfW / 2 + sw / 2, sy, turfCenterZ);
+  box(g, sw, sh, turfL, ledStripMat, turfW / 2 - sw / 2, sy, turfCenterZ);
 
-  // Coffee Table Items: Small potted succulent & books
-  createPlant(g, 0, 0.44, 2.30, 0.30);
-  createMiniBookStack(g, 0.22, 0.45, 2.32);
+  // 3. Proportioned Round White Coffee Table resting on the turf
+  createLoungeCoffeeTable(g, 0, turfThickness, turfCenterZ);
 
-  // 5. Two Blonde Wood Bookcases Flanking Lounge Wall
-  [-4.20, 4.20].forEach((bx) => {
-    createLoungeBookcase(g, bx, 0, 0.35);
-  });
+  // 4. Four Symmetrically Placed Puffy Teardrop Bean Bags (2 Orange, 2 Royal Navy #1B2A6B)
+  // Symmetrical layout around coffee table, >0.5m physical separation, angled inward
+  const beanBagY = turfThickness; // Sits flush on raised turf
+  // Left side of table
+  createPuffyBeanBagMesh(g, -1.65, turfCenterZ + 0.70, C.orange, 0.65, beanBagY); // Front-left: Orange
+  createPuffyBeanBagMesh(g, -1.65, turfCenterZ - 0.70, 0x1b2a6b, 0.82, beanBagY); // Rear-left: Royal Navy
+  // Right side of table
+  createPuffyBeanBagMesh(g, 1.65, turfCenterZ + 0.70, 0x1b2a6b, -0.65, beanBagY); // Front-right: Royal Navy
+  createPuffyBeanBagMesh(g, 1.65, turfCenterZ - 0.70, C.orange, -0.82, beanBagY); // Rear-right: Orange
 
-  // Tall corner indoor plants
-  createPlant(g, -5.8, 0, 0.6, 1.8);
-  createPlant(g, 5.8, 0, 0.6, 1.8);
+  // 5. Two Straight Wall-Mounted Wooden Shelf Units Flush to Back Wall
+  // Spaced symmetrically at x = -2.60m and x = +2.60m, framing the headset graphic
+  createWallMountedLoungeShelfUnit(g, -2.60, 0.90, 0.14);
+  createWallMountedLoungeShelfUnit(g, 2.60, 0.90, 0.14);
 
-  parent.add(g);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TEACHING ZONE (Center, Student Tables & Navy Chairs)
-// ─────────────────────────────────────────────────────────────────────────────
-function buildTeachingZone(parent, cx, floorY) {
-  const g = new THREE.Group();
-  g.position.set(cx, floorY, 0);
-
-  // Two blocks of tables: Left Block (cx - 2.8m) and Right Block (cx + 2.8m)
-  // Aisle between them is 1.8m wide
-  const blockOffsets = [-2.85, 2.85];
-  const rowZ = [5.60, 7.30, 9.00]; // 3 rows of long tables, 1.7m apart
-  const tblW = 2.70, tblD = 0.82, tblH = 0.74;
-
-  blockOffsets.forEach((bx) => {
-    rowZ.forEach((rz) => {
-      // 1. Long Study Table
-      // Blonde honey wood tabletop
-      box(g, tblW, 0.045, tblD, M(0xd8a878, { roughness: 0.4 }), bx, tblH - 0.022, rz);
-      // Black bevel edge trim
-      box(g, tblW + 0.01, 0.01, tblD + 0.01, M(0x111116), bx, tblH - 0.045, rz);
-
-      // Recessed flush black power/data insert module in center of desk
-      box(g, 0.35, 0.005, 0.14, M(0x111115, { metalness: 0.8 }), bx, tblH + 0.003, rz);
-
-      // Black metal leg frames (4 corner legs + crossbeam)
-      const legR = 0.025;
-      const legMat = M(0x18181c, { roughness: 0.45, metalness: 0.7 });
-      [-tblW / 2 + 0.1, tblW / 2 - 0.1].forEach((lx) => {
-        [-tblD / 2 + 0.08, tblD / 2 - 0.08].forEach((lz) => {
-          box(g, 0.045, tblH - 0.045, 0.045, legMat, bx + lx, (tblH - 0.045) / 2, rz + lz);
-        });
-        // Side leg connecting brace
-        box(g, 0.03, 0.03, tblD - 0.16, legMat, bx + lx, tblH * 0.35, rz);
-      });
-
-      // Soft contact shadow plane under table
-      const shadowMat = new THREE.MeshBasicMaterial({
-        color: 0x000000,
-        transparent: true,
-        opacity: 0.18,
-        depthWrite: false,
-      });
-      const shadowMesh = new THREE.Mesh(new THREE.PlaneGeometry(tblW + 0.2, tblD + 0.2), shadowMat);
-      shadowMesh.rotation.x = -Math.PI / 2;
-      shadowMesh.position.set(bx, 0.052, rz);
-      g.add(shadowMesh);
-
-      // 2. Ergonomic Student Chairs with NAVY Padded Seats (4 chairs per table = 24 total)
-      [-tblW * 0.28, tblW * 0.28].forEach((cxPos) => {
-        // Chair facing table from South side (looking North towards TV)
-        createNavySeatChair(g, bx + cxPos, 0, rz + tblD / 2 + 0.28, 0);
-        // Chair on North side tucked under
-        createNavySeatChair(g, bx + cxPos, 0, rz - tblD / 2 - 0.28, Math.PI);
-      });
-    });
-  });
+  // 6. Tall Leafy Indoor Floor Plants in Corners (1.35m tall, multi-leaved)
+  createLeafyPlant(g, -5.60, 0, 0.65, { isTall: true });
+  createLeafyPlant(g, 5.60, 0, 0.65, { isTall: true });
 
   parent.add(g);
 }
@@ -859,53 +756,562 @@ function buildTeachingZone(parent, cx, floorY) {
 // REUSABLE HIGH-DETAIL HELPER MESHES
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Ergonomic Student Task Chair with Perforated Back and NAVY Seat Cushion */
-function createNavySeatChair(parent, x, y, z, yaw) {
+/** Coffee Table: Round white satin top, black metal ring base & 4 slim steel legs */
+function createLoungeCoffeeTable(parent, x, floorY, z) {
   const g = new THREE.Group();
-  g.position.set(x, y, z);
+  g.position.set(x, floorY, z);
+
+  const topR = 0.46;
+  const topH = 0.024;
+  const tableTotalH = 0.36;
+  const legMat = M(0x1a1a1e, { roughness: 0.4, metalness: 0.8 });
+  const topMat = M(0xfbfcfd, { roughness: 0.25, metalness: 0.04 });
+
+  // 1. Round Satin White Top
+  const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(topR, topR, topH, 28), topMat);
+  tableTop.position.set(0, tableTotalH - topH / 2, 0);
+  g.add(tableTop);
+
+  // 2. Black Metal Circular Ring Base (resting flat on turf)
+  const ringR = 0.43;
+  const ringH = 0.016;
+  cyl(g, ringR, ringR * 0.95, ringH, legMat, 0, ringH / 2, 0, 24);
+
+  // 3. Four Slim Vertical Steel Legs
+  for (let i = 0; i < 4; i++) {
+    const ang = (i * Math.PI) / 2 + Math.PI / 4;
+    const lx = Math.cos(ang) * (ringR - 0.02);
+    const lz = Math.sin(ang) * (ringR - 0.02);
+    cyl(g, 0.011, 0.011, tableTotalH - topH - ringH, legMat, lx, (tableTotalH - topH + ringH) / 2, lz, 8);
+  }
+
+  // 4. Center Crossbraces under top
+  box(g, ringR * 1.8, 0.014, 0.018, legMat, 0, tableTotalH - topH - 0.01, 0);
+  box(g, 0.018, 0.014, ringR * 1.8, legMat, 0, tableTotalH - topH - 0.01, 0);
+
+  // 5. Tabletop Props (properly sized, resting flat on surface)
+  const topSurfaceY = tableTotalH;
+  // Leafy potted plant (12cm pot, lush radiating leaves)
+  createLeafyPlant(g, -0.02, topSurfaceY, -0.04, { scale: 0.85, potColor: 0xffffff });
+  // Stack of 2 Hardcover Books
+  createStackedBooks(g, 0.18, topSurfaceY, 0.05);
+
+  // Contact shadow under base ring
+  const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.22, depthWrite: false });
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(topR * 2.2, topR * 2.2), shadowMat);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(0, 0.002, 0);
+  g.add(shadow);
+
+  parent.add(g);
+  return g;
+}
+
+/** Puffy Teardrop / Pear-Shaped Bean Bag with Ergonomic Seat Dip & Wrinkle Folds */
+function createPuffyBeanBagMesh(parent, x, z, colHex, yaw, floorY) {
+  const g = new THREE.Group();
+  g.position.set(x, floorY, z);
   g.rotation.y = yaw;
 
-  const navySeatMat = M(0x14284b, { roughness: 0.65 }); // Deep navy cushion
-  const blackFrameMat = M(0x18181c, { roughness: 0.45, metalness: 0.7 });
+  // Sculpted parametric teardrop / pear bean bag geometry
+  const widthSegs = 28;
+  const heightSegs = 24;
+  const geom = new THREE.SphereGeometry(0.46, widthSegs, heightSegs);
+  const pos = geom.attributes.position;
 
-  // 1. Navy Padded Cushion Seat (y = 0.44m)
-  const seatMesh = box(g, 0.44, 0.05, 0.42, navySeatMat, 0, 0.44, 0);
+  for (let i = 0; i < pos.count; i++) {
+    let px = pos.getX(i);
+    let py = pos.getY(i);
+    let pz = pos.getZ(i);
 
-  // 2. Perforated Black Ergonomic Backrest
-  const backMesh = box(g, 0.42, 0.38, 0.03, blackFrameMat, 0, 0.70, -0.20);
-  backMesh.rotation.x = -0.08;
+    // Height ratio v in [0, 1]
+    const v = (py + 0.46) / 0.92;
+    const angle = Math.atan2(px, pz);
 
-  // 3. Black Tubular Legs (4 splayed legs)
-  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, -0.18, 0.22, -0.17, 8);
-  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, 0.18, 0.22, -0.17, 8);
-  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, -0.18, 0.22, 0.17, 8);
-  cyl(g, 0.014, 0.012, 0.44, blackFrameMat, 0.18, 0.22, 0.17, 8);
+    // 1. Asymmetric teardrop / pear shaping:
+    // Backrest (pz < 0): expands upward and backward
+    // Front cushion (pz > 0): squashes down into an ergonomic lap
+    const backFactor = Math.max(0, -pz / 0.46);
+    const frontFactor = Math.max(0, pz / 0.46);
+
+    // Back rises up to ~0.66m; center-front dips down into deep seating bowl
+    py += backFactor * 0.22 * Math.sin(v * Math.PI);
+    py -= (1 - Math.abs(angle / Math.PI)) * 0.11 * Math.sin(v * Math.PI) * (1 - v);
+
+    // Pear shape bulge: wider at base, tapering towards head
+    const bulge = 1.0 + (1 - v) * 0.24 - v * 0.16;
+    px *= bulge;
+    pz *= bulge * (1.0 + backFactor * 0.14);
+
+    // Flatten bottom against floor
+    if (py < -0.36) {
+      py = -0.36 + (py + 0.36) * 0.12;
+    }
+
+    // 2. Subtle organic crease ripples along side seams
+    const fold = Math.sin(angle * 4 + v * 6) * 0.016 * Math.sin(v * Math.PI);
+    px += Math.cos(angle) * fold;
+    pz += Math.sin(angle) * fold;
+
+    pos.setXYZ(i, px, py + 0.36, pz);
+  }
+
+  geom.computeVertexNormals();
+
+  const mat = new THREE.MeshStandardMaterial({
+    color: colHex,
+    roughness: 0.88,
+    metalness: 0.04,
+  });
+
+  const mesh = new THREE.Mesh(geom, mat);
+  g.add(mesh);
+
+  // Soft contact shadow plane beneath bean bag
+  const shadowMat = new THREE.MeshBasicMaterial({
+    color: 0x000000,
+    transparent: true,
+    opacity: 0.22,
+    depthWrite: false,
+  });
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.96), shadowMat);
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.set(0, 0.003, 0);
+  g.add(shadow);
+
+  parent.add(g);
+  return g;
+}
+
+/** Straight Wall-Mounted Wooden Shelf Unit (4 Shelves, Slim Black Side Frames, Warm LED Strips) */
+function createWallMountedLoungeShelfUnit(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+
+  const unitW = 1.25;
+  const unitH = 1.85;
+  const unitD = 0.26;
+  const shelfYPositions = [0.15, 0.65, 1.15, 1.65]; // 4 shelves
+  const woodMat = M(0xd4a373, { roughness: 0.45 });
+  const blackFrameMat = M(0x18181c, { roughness: 0.4, metalness: 0.75 });
+  const ledWarmMat = Bm(0xfff2d0);
+
+  // 1. Two Slim Black Metal Side Ladder Frames (flush against wall)
+  [-unitW / 2 + 0.02, unitW / 2 - 0.02].forEach((sx) => {
+    // Front vertical upright
+    box(g, 0.018, unitH, 0.018, blackFrameMat, sx, unitH / 2, unitD - 0.01);
+    // Rear vertical upright (wall side)
+    box(g, 0.018, unitH, 0.018, blackFrameMat, sx, unitH / 2, 0.01);
+    // Cross rungs under each shelf
+    shelfYPositions.forEach((sy) => {
+      box(g, 0.018, 0.018, unitD, blackFrameMat, sx, sy - 0.015, unitD / 2);
+    });
+  });
+
+  // 2. Four Blonde Wood Shelves with Warm LED Underglow
+  shelfYPositions.forEach((sy, idx) => {
+    // Wood shelf plank
+    box(g, unitW, 0.025, unitD, woodMat, 0, sy, unitD / 2);
+    // Warm LED strip under each shelf
+    box(g, unitW - 0.08, 0.008, 0.02, ledWarmMat, 0, sy - 0.015, unitD / 2);
+
+    // Items on shelves (large and legible)
+    if (idx === 0) {
+      // Bottom shelf: Row of colorful upright books + small leafy plant
+      createBookRow(g, -0.22, sy + 0.12, unitD / 2, 7);
+      createLeafyPlant(g, 0.35, sy + 0.025, unitD / 2, { scale: 0.70, potColor: 0xffffff });
+    } else if (idx === 1) {
+      // Shelf 2: White VR Headset on display stand + mini book stack
+      createMiniVrHeadset(g, -0.20, sy + 0.10, unitD / 2);
+      createMiniBookStack(g, 0.28, sy + 0.025, unitD / 2);
+    } else if (idx === 2) {
+      // Shelf 3: Cute mini robot mascot figure + leafy succulent pot
+      createMiniRobotToy(g, -0.25, sy + 0.025, unitD / 2);
+      createLeafyPlant(g, 0.28, sy + 0.025, unitD / 2, { scale: 0.65, potColor: 0xff7a00 });
+    } else if (idx === 3) {
+      // Top shelf: Cascading trailing ivy plant + decorative tech artifact
+      createTrailingIvyPlant(g, -0.32, sy + 0.025, unitD / 2);
+      box(g, 0.14, 0.18, 0.14, M(0x1e293b, { roughness: 0.3, metalness: 0.5 }), 0.30, sy + 0.09, unitD / 2);
+    }
+  });
+
+  parent.add(g);
+  return g;
+}
+
+/** Multi-Leaved Low-Poly Leafy Plant (Broad arching leaves, zero spheres) */
+function createLeafyPlant(parent, x, y, z, opts = {}) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  const scale = opts.scale || 1.0;
+  g.scale.setScalar(scale);
+
+  const isTall = opts.isTall || false;
+  const potR = isTall ? 0.22 : 0.07;
+  const potH = isTall ? 0.38 : 0.09;
+  const potMat = M(opts.potColor || 0xf8fafc, { roughness: 0.3 });
+
+  // Ceramic Planter Pot
+  cyl(g, potR, potR * 0.85, potH, potMat, 0, potH / 2, 0, 16);
+  cyl(g, potR * 1.04, potR * 1.04, potH * 0.12, potMat, 0, potH - potH * 0.06, 0, 16);
+  cyl(g, potR * 0.92, potR * 0.92, 0.02, M(0x3e2723, { roughness: 0.9 }), 0, potH * 0.92, 0, 12);
+
+  // Leafy Foliage (radiating arching elongated leaves)
+  const leafCount = isTall ? 14 : 9;
+  const leafMat1 = M(0x2e7d32, { roughness: 0.65, side: THREE.DoubleSide });
+  const leafMat2 = M(0x388e3c, { roughness: 0.60, side: THREE.DoubleSide });
+
+  for (let i = 0; i < leafCount; i++) {
+    const leafGroup = new THREE.Group();
+    const angle = (i * Math.PI * 2) / leafCount + (i % 2) * 0.2;
+    leafGroup.rotation.y = angle;
+    leafGroup.position.set(0, potH * 0.92, 0);
+
+    const leafL = isTall ? (0.45 + (i % 3) * 0.12) : (0.14 + (i % 3) * 0.04);
+    const leafW = isTall ? 0.16 : 0.065;
+    const droop = isTall ? (0.35 + (i % 4) * 0.15) : (0.45 + (i % 3) * 0.15);
+
+    // Arching leaf blade geometry
+    const leafGeom = new THREE.PlaneGeometry(leafW, leafL, 3, 5);
+    const lPos = leafGeom.attributes.position;
+    for (let k = 0; k < lPos.count; k++) {
+      const ly = lPos.getY(k);
+      const normY = (ly + leafL / 2) / leafL;
+      const arch = Math.pow(normY, 1.8) * droop;
+      lPos.setZ(k, arch);
+    }
+    leafGeom.computeVertexNormals();
+
+    const leafMesh = new THREE.Mesh(leafGeom, i % 2 === 0 ? leafMat1 : leafMat2);
+    leafMesh.position.set(0, leafL / 2, 0);
+    leafMesh.rotation.x = 0.45 + (i % 3) * 0.2;
+    leafGroup.add(leafMesh);
+
+    // Stem
+    cyl(leafGroup, 0.005, 0.005, leafL * 0.4, M(0x1b5e20), 0, leafL * 0.2, 0, 6);
+
+    g.add(leafGroup);
+  }
+
+  parent.add(g);
+  return g;
+}
+
+/** Cascading Trailing Ivy Plant */
+function createTrailingIvyPlant(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  cyl(g, 0.07, 0.055, 0.08, M(0xffffff, { roughness: 0.3 }), 0, 0.04, 0, 12);
+
+  const leafMat = M(0x2e7d32, { roughness: 0.65, side: THREE.DoubleSide });
+  for (let a = 0; a < 6; a++) {
+    const ang = (a * Math.PI * 2) / 6;
+    const l = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 0.09), leafMat);
+    l.position.set(Math.cos(ang) * 0.04, 0.08, Math.sin(ang) * 0.04);
+    l.rotation.x = 0.5;
+    l.rotation.y = ang;
+    g.add(l);
+  }
+  // Cascading ivy vine clusters hanging down the front/side
+  [-0.04, 0.0, 0.04].forEach((vx, vi) => {
+    const vineLen = 0.25 + vi * 0.12;
+    for (let vy = 0.04; vy >= -vineLen; vy -= 0.05) {
+      const l = new THREE.Mesh(new THREE.PlaneGeometry(0.045, 0.06), leafMat);
+      l.position.set(vx + Math.sin(vy * 10) * 0.02, vy, 0.08);
+      l.rotation.z = Math.sin(vy * 8) * 0.3;
+      g.add(l);
+    }
+  });
+  parent.add(g);
+}
+
+/** Row of Upright Books with Metal Bookend */
+function createBookRow(parent, x, y, z, count = 6) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  const bookColors = [0x1d4ed8, 0xb91c1c, 0xf59e0b, 0x059669, 0x7c3aed, 0xe11d48, 0x0284c7];
+  const startX = -(count * 0.04) / 2;
+  for (let i = 0; i < count; i++) {
+    const col = bookColors[i % bookColors.length];
+    const bH = 0.18 + (i % 3) * 0.025;
+    const bD = 0.16 + (i % 2) * 0.02;
+    box(g, 0.032, bH, bD, M(col, { roughness: 0.4 }), startX + i * 0.038, bH / 2, 0);
+  }
+  box(g, 0.008, 0.15, 0.12, M(0x18181c, { metalness: 0.8 }), startX + count * 0.038 + 0.004, 0.075, 0);
+  parent.add(g);
+}
+
+/** Cute Low-Poly Mini Robot Mascot Toy */
+function createMiniRobotToy(parent, x, y, z) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  const whiteMat = M(0xf0f4f8, { roughness: 0.3 });
+  const cyanMat = Bm(0x00f0ff);
+  const orangeMat = M(0xff7a00);
+
+  box(g, 0.14, 0.12, 0.10, whiteMat, 0, 0.06, 0);
+  box(g, 0.08, 0.04, 0.01, orangeMat, 0, 0.06, 0.052);
+  box(g, 0.12, 0.09, 0.09, whiteMat, 0, 0.165, 0);
+  box(g, 0.09, 0.03, 0.01, cyanMat, 0, 0.17, 0.048);
+  cyl(g, 0.005, 0.005, 0.04, orangeMat, 0, 0.23, 0, 6);
+  cyl(g, 0.015, 0.015, 0.03, whiteMat, -0.04, 0.015, 0, 6);
+  cyl(g, 0.015, 0.015, 0.03, whiteMat, 0.04, 0.015, 0, 6);
 
   parent.add(g);
 }
 
-/** Rounded Bean Bag with Fabric Creases and Organic Feel */
-function createBeanBagMesh(parent, x, z, colHex, yaw) {
+/** Two Flat Stacked Hardcover Books on Table */
+function createStackedBooks(parent, x, y, z) {
   const g = new THREE.Group();
-  g.position.set(x, 0.05, z);
-  g.rotation.y = yaw;
+  g.position.set(x, y, z);
 
-  const mat = M(colHex, { roughness: 0.88 });
-
-  // Main bean bag body (squashed sphere with tufts)
-  const geom = new THREE.SphereGeometry(0.55, 16, 12);
-  geom.scale(1.05, 0.65, 1.15);
-  const mesh = new THREE.Mesh(geom, mat);
-  mesh.position.set(0, 0.32, 0);
-  g.add(mesh);
-
-  // Indented seat top
-  const topCush = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.42, 0.14, 14), mat);
-  topCush.position.set(0, 0.45, -0.06);
-  topCush.rotation.x = -0.25;
-  g.add(topCush);
+  // Bottom book: royal blue
+  box(g, 0.22, 0.028, 0.16, M(0x1d4ed8, { roughness: 0.4 }), 0, 0.014, 0);
+  // Top book: coral / amber, rotated 12 degrees
+  const b2 = box(g, 0.19, 0.024, 0.14, M(C.orange, { roughness: 0.4 }), 0.01, 0.040, 0);
+  b2.rotation.y = 0.21;
 
   parent.add(g);
+}
+
+/** Vector Line-Art VR Headset Graphic on Back Navy Wall */
+function drawLoungeHeadsetGraphic(ctx, cx, cy) {
+  ctx.save();
+
+  const w = 480;
+  const h = 230;
+  const r = 50;
+
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 14;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Visor outer contour with bottom nose bridge cutout
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2 + r, cy - h / 2);
+  ctx.lineTo(cx + w / 2 - r, cy - h / 2);
+  ctx.arcTo(cx + w / 2, cy - h / 2, cx + w / 2, cy + h / 2, r);
+  ctx.lineTo(cx + w / 2, cy + h / 2 - r);
+  ctx.arcTo(cx + w / 2, cy + h / 2, cx, cy + h / 2, r);
+  ctx.lineTo(cx + 65, cy + h / 2);
+  ctx.quadraticCurveTo(cx, cy + h / 2 - 45, cx - 65, cy + h / 2);
+  ctx.lineTo(cx - w / 2 + r, cy + h / 2);
+  ctx.arcTo(cx - w / 2, cy + h / 2, cx - w / 2, cy - h / 2, r);
+  ctx.lineTo(cx - w / 2, cy - h / 2 + r);
+  ctx.arcTo(cx - w / 2, cy - h / 2, cx + w / 2, cy - h / 2, r);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Inner visor display frame
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.40)';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  const iw = w - 48;
+  const ih = h - 48;
+  const ir = 35;
+  ctx.moveTo(cx - iw / 2 + ir, cy - ih / 2);
+  ctx.lineTo(cx + iw / 2 - ir, cy - ih / 2);
+  ctx.arcTo(cx + iw / 2, cy - ih / 2, ctx + iw / 2, cy + ih / 2, ir);
+  ctx.lineTo(cx + iw / 2, cy + ih / 2 - ir);
+  ctx.arcTo(cx + iw / 2, cy + ih / 2, cx, cy + ih / 2, ir);
+  ctx.lineTo(cx + 50, cy + ih / 2);
+  ctx.quadraticCurveTo(cx, cy + ih / 2 - 32, cx - 50, cy + ih / 2);
+  ctx.lineTo(cx - iw / 2 + ir, cy + ih / 2);
+  ctx.arcTo(cx - iw / 2, cy + ih / 2, cx - iw / 2, cy - ih / 2, ir);
+  ctx.lineTo(cx - iw / 2, cy - ih / 2 + ir);
+  ctx.arcTo(cx - iw / 2, cy - ih / 2, cx + iw / 2, cy - ih / 2, ir);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Two Front Lenses / Camera Sensor Rings
+  [-115, 115].forEach((lx) => {
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(cx + lx, cy - 8, 36, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(cx + lx, cy - 8, 16, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(20, 40, 75, 0.8)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx + lx, cy - 8, 26, -0.6 * Math.PI, 0.1 * Math.PI);
+    ctx.stroke();
+  });
+
+  // Left & Right Horizontal Head Straps
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2, cy - 10);
+  ctx.lineTo(cx - w / 2 - 95, cy - 10);
+  ctx.stroke();
+  ctx.strokeRect(cx - w / 2 - 110, cy - 30, 16, 40);
+
+  ctx.beginPath();
+  ctx.moveTo(cx + w / 2, cy - 10);
+  ctx.lineTo(cx + w / 2 + 95, cy - 10);
+  ctx.stroke();
+  ctx.strokeRect(cx + w / 2 + 94, cy - 30, 16, 40);
+
+  // Top strap bracket
+  ctx.lineWidth = 10;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - h / 2);
+  ctx.lineTo(cx, cy - h / 2 - 50);
+  ctx.stroke();
+  ctx.strokeRect(cx - 24, cy - h / 2 - 62, 48, 14);
+
+  // Radiant Orange Halo Arcs flanking the headset
+  ctx.strokeStyle = '#ff7a00';
+  ctx.lineWidth = 12;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 390, 0.76 * Math.PI, 1.24 * Math.PI);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, 390, -0.24 * Math.PI, 0.24 * Math.PI);
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(255, 122, 0, 0.45)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 430, 0.80 * Math.PI, 1.20 * Math.PI);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 430, -0.20 * Math.PI, 0.20 * Math.PI);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/** Multi-Tone Artificial Turf Grass Texture Generator */
+function getRealisticTurfTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#3a8726';
+  ctx.fillRect(0, 0, 512, 512);
+
+  const bladeColors = ['#4ca632', '#2f721e', '#59bc38', '#265d18', '#63ca40', '#367c22'];
+  for (let i = 0; i < 35000; i++) {
+    const bx = Math.random() * 512;
+    const by = Math.random() * 512;
+    const blen = 6 + Math.random() * 8;
+    const bcol = bladeColors[Math.floor(Math.random() * bladeColors.length)];
+    ctx.strokeStyle = bcol;
+    ctx.lineWidth = 1.2 + Math.random() * 0.8;
+    ctx.beginPath();
+    ctx.moveTo(bx, by);
+    ctx.lineTo(bx + (Math.random() - 0.5) * 4, by - blen);
+    ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(4, 3);
+  tex.anisotropy = 8;
+  return tex;
+}
+
+/** Pristine AR / VR Lab Gray Marble Floor Texture (1.2m Tile Seams, Zero Stray Lines) */
+let _cachedArVrFloorTex = null;
+
+function getArVrFloorTexture() {
+  if (_cachedArVrFloorTex) return _cachedArVrFloorTex;
+
+  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const W = isMobile ? 1024 : 2048;
+  const H = isMobile ? 1024 : 2048;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Light-to-mid gray marble base (#B4B4B8)
+  ctx.fillStyle = '#b4b4b8';
+  ctx.fillRect(0, 0, W, H);
+
+  // Multi-scale marble mineral clouds
+  for (let i = 0; i < 45; i++) {
+    const rx = Math.random() * W;
+    const ry = Math.random() * H;
+    const rad = 80 + Math.random() * 220;
+    const grad = ctx.createRadialGradient(rx, ry, 0, rx, ry, rad);
+    const isLighter = Math.random() > 0.45;
+    grad.addColorStop(0, isLighter ? 'rgba(235, 235, 240, 0.28)' : 'rgba(150, 150, 156, 0.22)');
+    grad.addColorStop(1, 'rgba(180, 180, 184, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(rx, ry, rad, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Flowing marble veining (smoky slate and crisp white veins)
+  function drawVeinBranch(x0, y0, length, angle, width, col) {
+    ctx.strokeStyle = col;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    let cx = x0, cy = y0;
+    ctx.moveTo(cx, cy);
+    const steps = 14;
+    for (let s = 0; s < steps; s++) {
+      angle += (Math.random() - 0.5) * 0.45;
+      const stepLen = length / steps;
+      cx += Math.cos(angle) * stepLen;
+      cy += Math.sin(angle) * stepLen;
+      ctx.lineTo(cx, cy);
+    }
+    ctx.stroke();
+  }
+
+  for (let v = 0; v < 36; v++) {
+    const vx = Math.random() * W;
+    const vy = Math.random() * H;
+    const vlen = 180 + Math.random() * 380;
+    const vang = -0.55 + (Math.random() - 0.5) * 0.6;
+    const isWhite = Math.random() > 0.4;
+    const vcol = isWhite ? 'rgba(255, 255, 255, 0.32)' : 'rgba(135, 135, 142, 0.25)';
+    drawVeinBranch(vx, vy, vlen, vang, 1.5 + Math.random() * 2.5, vcol);
+  }
+
+  // Crisp, faint tile grout seams (every 1.20m in room space)
+  const tileSize = W / 11.66;
+  ctx.strokeStyle = 'rgba(110, 110, 116, 0.35)';
+  ctx.lineWidth = 1.8;
+  for (let tx = 0; tx <= W; tx += tileSize) {
+    ctx.beginPath();
+    ctx.moveTo(tx, 0);
+    ctx.lineTo(tx, H);
+    ctx.stroke();
+  }
+  for (let ty = 0; ty <= H; ty += tileSize) {
+    ctx.beginPath();
+    ctx.moveTo(0, ty);
+    ctx.lineTo(W, ty);
+    ctx.stroke();
+  }
+
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.anisotropy = 16;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.generateMipmaps = true;
+
+  _cachedArVrFloorTex = tex;
+  return tex;
 }
 
 /** Low-Poly White VR Headset */
@@ -916,14 +1322,9 @@ function createMiniVrHeadset(parent, x, y, z) {
   const whiteMat = M(0xf8fafc, { roughness: 0.3 });
   const blackMat = M(0x18181c, { roughness: 0.5 });
 
-  // Visor body
   const visor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.13, 0.15), whiteMat);
   g.add(visor);
-
-  // Black face gasket foam
   box(g, 0.23, 0.12, 0.04, blackMat, 0, 0, -0.08);
-
-  // Black side headstraps
   box(g, 0.02, 0.04, 0.22, blackMat, -0.12, 0, -0.05);
   box(g, 0.02, 0.04, 0.22, blackMat, 0.12, 0, -0.05);
   box(g, 0.24, 0.04, 0.02, blackMat, 0, 0, -0.16);
@@ -937,9 +1338,7 @@ function createMiniVrController(parent, x, y, z) {
   g.position.set(x, y, z);
   const mat = M(0x222226, { roughness: 0.45 });
 
-  // Grip handle
   cyl(g, 0.022, 0.018, 0.14, mat, 0, 0, 0, 8);
-  // Tracking ring / halo on top
   const halo = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.010, 8, 16), mat);
   halo.position.set(0, 0.08, 0.02);
   halo.rotation.x = 0.5;
@@ -956,31 +1355,6 @@ function createMiniBookStack(parent, x, y, z) {
   const b1 = box(g, 0.24, 0.035, 0.18, M(0x0284c7), 0, 0.018, 0);
   const b2 = box(g, 0.22, 0.035, 0.16, M(C.orange), 0.01, 0.053, 0);
   b2.rotation.y = 0.15;
-
-  parent.add(g);
-}
-
-/** Lounge Blonde Wood Bookcase Unit */
-function createLoungeBookcase(parent, x, y, z) {
-  const g = new THREE.Group();
-  g.position.set(x, y, z);
-
-  const bW = 1.30, bH = 2.40, bD = 0.36;
-  const mat = M(0xd4a373, { roughness: 0.45 });
-
-  // Outer frame
-  box(g, bW, 0.04, bD, mat, 0, 0.02, 0);
-  box(g, bW, 0.04, bD, mat, 0, bH - 0.02, 0);
-  box(g, 0.04, bH, bD, mat, -bW / 2 + 0.02, bH / 2, 0);
-  box(g, 0.04, bH, bD, mat, bW / 2 - 0.02, bH / 2, 0);
-
-  // 4 Shelves
-  [0.60, 1.15, 1.70].forEach((sy) => {
-    box(g, bW - 0.08, 0.03, bD - 0.02, mat, 0, sy, 0);
-    // Books and mini plant on each shelf
-    createMiniBookStack(g, -0.32, sy + 0.02, 0);
-    createPlant(g, 0.35, sy + 0.02, 0, 0.35);
-  });
 
   parent.add(g);
 }
