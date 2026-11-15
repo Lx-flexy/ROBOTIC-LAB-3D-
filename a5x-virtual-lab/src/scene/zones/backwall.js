@@ -1855,6 +1855,7 @@ function createCodingZoneRack(parent, x, z) {
 
 export function buildBackWall(scene) {
   const anim = { spin: [], head: null };
+  const legContactMat = M(0x000000, { transparent: true, opacity: 0.16, roughness: 1 });
 
   // Helper: zone bay with sign + bench table (used for Design and Coding zones)
   const bay = (x, title) => {
@@ -1947,7 +1948,6 @@ export function buildBackWall(scene) {
   createTable(scene, 5.4, 1.25, 10.9, -14.15, 0.82);
 
   // Soft grounding contact shadows under table legs
-  const legContactMat = M(0x000000, { transparent: true, opacity: 0.16, roughness: 1 });
   [
     [10.9 - 2.58, -14.15 - 0.505],
     [10.9 + 2.58, -14.15 - 0.505],
