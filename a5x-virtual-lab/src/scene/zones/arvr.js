@@ -466,75 +466,94 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
     });
 
     // ── TOP-CENTER TITLE HEADER (Row 1: Title & Logos, Row 2: Tagline) ──
-    const midX = Math.round(W * 0.535);
-    const topY = Math.round(185 * scale); // Title baseline Y
-    const logoR = Math.round(38 * scale);
+    const midX = Math.round(W * 0.50); // Horizontally centered with the wall and Smart TV
+    const Yc = Math.round(196 * scale); // Shared vertical center line
 
-    // (A) Left: Orange sketch-style isometric cube with dashed circle
-    const leftCubeX = Math.round(midX - 980 * scale);
+    // Title Font & Dynamic Measurement
+    const titleFontSz = Math.round(108 * scale);
+    ctx.font = `italic 900 ${titleFontSz}px 'Segoe UI', system-ui, sans-serif`;
+    const arText = 'AR / VR ';
+    const labText = 'LAB';
+    const arw = ctx.measureText(arText).width;
+    const labw = ctx.measureText(labText).width;
+    const titleW = arw + labw;
+
+    // SRI Logo parameters (scaled up ~1.6x, total height matches title cap-height)
+    const logoR = Math.round(60 * scale);
+    const logoW = Math.round(logoR * 2.2);
+    const logoH = Math.round(logoR * 2.82);
+
+    // Gaps and divider: gap about 0.4x logo width, divider height matches logo height
+    const gap = Math.round(logoW * 0.40);
+    const divW = Math.max(3, Math.round(4.5 * scale));
+    const divH = logoH;
+
+    // Total title row group width
+    const totalRowW = logoW + gap + divW + gap + titleW;
+    const rowStartX = Math.round(midX - totalRowW / 2);
+
+    const logoCx = Math.round(rowStartX + logoW / 2);
+    const divX = Math.round(rowStartX + logoW + gap);
+    const titleStartX = Math.round(divX + divW + gap);
+
+    // (A) Left: Orange sketch-style isometric cube with dashed circle (symmetrically spaced)
     const cubeRad = Math.round(70 * scale);
-    drawSketchCubeWithCircle(ctx, leftCubeX, topY, cubeRad, Math.round(36 * scale));
+    const leftCubeX = Math.round(rowStartX - 190 * scale);
+    drawSketchCubeWithCircle(ctx, leftCubeX, Yc, cubeRad, Math.round(36 * scale));
     muralBlocks.push({
       id: 'SketchCube-Left',
       x1: leftCubeX - cubeRad,
-      y1: topY - cubeRad,
+      y1: Yc - cubeRad,
       x2: leftCubeX + cubeRad,
-      y2: topY + cubeRad,
+      y2: Yc + cubeRad,
     });
 
-    // (B) Center: SRI Logo + Tree Emblem
-    const logoX = Math.round(midX - 390 * scale);
-    drawSriLotusEmblem(ctx, logoX, topY, logoR);
+    // (B) Center: SRI Logo + Tree Emblem (Vertically centered at Yc)
+    const logoCy = Math.round(Yc - logoR * 0.21);
+    drawSriLotusEmblem(ctx, logoCx, logoCy, logoR);
     muralBlocks.push({
       id: 'SRI-Logo',
-      x1: logoX - Math.round(55 * scale),
-      y1: topY - Math.round(52 * scale),
-      x2: logoX + Math.round(55 * scale),
-      y2: topY + Math.round(58 * scale),
+      x1: logoCx - logoW / 2,
+      y1: Yc - logoH / 2,
+      x2: logoCx + logoW / 2,
+      y2: Yc + logoH / 2,
     });
 
-    // Thin vertical divider line
-    const divX = Math.round(midX - 90 * scale);
-    const divW = Math.max(3, Math.round(4 * scale));
-    const divH = Math.round(70 * scale);
+    // Thin vertical divider line (Orange, vertically centered at Yc)
     ctx.fillStyle = '#ff7a00';
-    ctx.fillRect(divX, topY - divH / 2, divW, divH);
+    ctx.fillRect(divX, Yc - divH / 2, divW, divH);
     muralBlocks.push({
       id: 'Title-Divider',
       x1: divX,
-      y1: topY - divH / 2,
+      y1: Yc - divH / 2,
       x2: divX + divW,
-      y2: topY + divH / 2,
+      y2: Yc + divH / 2,
     });
 
-    // "AR / VR LAB" Title (AR / VR in navy italic bold, LAB in orange)
-    const titleFontSz = Math.round(112 * scale);
+    // "AR / VR LAB" Title (AR / VR in navy italic bold, LAB in orange, vertically centered at Yc)
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.font = `italic 900 ${titleFontSz}px 'Segoe UI', system-ui, sans-serif`;
     ctx.fillStyle = '#14284b';
-    const titleStartX = Math.round(midX - 35 * scale);
-    ctx.fillText('AR / VR ', titleStartX, topY - Math.round(6 * scale));
-    const arw = ctx.measureText('AR / VR ').width;
+    ctx.fillText(arText, titleStartX, Yc);
     ctx.fillStyle = '#ff7a00';
-    ctx.fillText('LAB', titleStartX + arw, topY - Math.round(6 * scale));
-    const labw = ctx.measureText('LAB').width;
+    ctx.fillText(labText, titleStartX + arw, Yc);
     muralBlocks.push({
       id: 'Title-Text',
       x1: titleStartX,
-      y1: topY - titleFontSz / 2,
+      y1: Yc - titleFontSz / 2,
       x2: titleStartX + arw + labw,
-      y2: topY + titleFontSz / 2,
+      y2: Yc + titleFontSz / 2,
     });
 
     // Sub-motto: "— EXPLORE • CREATE • EXPERIENCE • BUILD —" (Row 2)
-    // Placed at Y = 430 * scale: >= 0.32m below lowest point of SRI logo, and >= 0.31m above TV top!
-    const taglineY = Math.round(430 * scale);
+    // Placed at Y = 455 * scale: >= 0.30m below lowest point of SRI logo, and >= 0.35m above TV top!
+    const taglineY = Math.round(455 * scale);
     const taglineFontSz = Math.round(42 * scale);
     const taglineText = '—   EXPLORE   •   CREATE   •   EXPERIENCE   •   BUILD   —';
     ctx.font = `900 ${taglineFontSz}px 'Segoe UI', system-ui, sans-serif`;
     const tagW = ctx.measureText(taglineText).width;
-    const tagX = Math.round(midX + 130 * scale);
+    const tagX = midX;
     ctx.fillStyle = '#14284b';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -547,26 +566,26 @@ function buildMainDisplayWall(parent, cx, zMin, floorY, roomW, roomH) {
       y2: taglineY + taglineFontSz / 2,
     });
 
-    // (C) Right: Orange sketch cube
-    const rightCubeX = Math.round(midX + 820 * scale);
-    drawSketchCubeWithCircle(ctx, rightCubeX, topY, cubeRad, Math.round(36 * scale));
+    // (C) Right: Orange sketch cube (symmetrically spaced)
+    const rightCubeX = Math.round((titleStartX + titleW) + 190 * scale);
+    drawSketchCubeWithCircle(ctx, rightCubeX, Yc, cubeRad, Math.round(36 * scale));
     muralBlocks.push({
       id: 'SketchCube-Right',
       x1: rightCubeX - cubeRad,
-      y1: topY - cubeRad,
+      y1: Yc - cubeRad,
       x2: rightCubeX + cubeRad,
-      y2: topY + cubeRad,
+      y2: Yc + cubeRad,
     });
 
     // (D) Right: Navy line-art person wearing VR headset (pulled inward with ample margin)
     const vrPersonX = Math.round(3450 * scale);
-    drawVrPersonSilhouette(ctx, vrPersonX, topY, scale);
+    drawVrPersonSilhouette(ctx, vrPersonX, Yc, scale);
     muralBlocks.push({
       id: 'VR-Person',
       x1: vrPersonX - Math.round(60 * scale),
-      y1: topY - Math.round(60 * scale),
+      y1: Yc - Math.round(60 * scale),
       x2: vrPersonX + Math.round(100 * scale),
-      y2: topY + Math.round(70 * scale),
+      y2: Yc + Math.round(70 * scale),
     });
 
     // Run safe-area validation
